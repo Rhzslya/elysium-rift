@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "dist",
+    "target": "es2017",
+    "strict": true,
+    "noEmit": false,
+    "moduleResolution": "Node",
+    "isolatedModules": true
+  },
+  "include": ["server.mts"]
+}

@@ -10,24 +10,26 @@ export default function GameRoom() {
   const [playerName, setPlayerName] = useState("");
   const [log, setLog] = useState<string[]>([]);
 
-  console.log(roomId?.length);
   useEffect(() => {
     // Simulasi log awal
     setLog([
       "Welcome to Elysium Rift.",
       "You have entered the realm of Room ID: " + roomId,
+      "Players List:",
+      "1. Player A",
+      "2. Player B",
       "Prepare yourself...",
     ]);
   }, [roomId]);
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 flex flex-col items-center">
+    <main className="min-h-screen  text-white p-6 flex flex-col items-center">
       <h1 className="text-3xl font-bold text-amber-400 mb-4">Elysium Rift</h1>
       <p className="text-sm mb-6">Room: {roomId}</p>
 
       <section className="bg-gray-800 p-4 rounded-lg w-full max-w-xl mb-4">
         <h2 className="text-lg font-semibold mb-2">Battle Log</h2>
-        <div className="h-40 overflow-y-auto space-y-1 text-sm">
+        <div className="h-56 overflow-y-auto space-y-1 text-sm">
           {log.map((entry, index) => (
             <p key={index}>➤ {entry}</p>
           ))}
