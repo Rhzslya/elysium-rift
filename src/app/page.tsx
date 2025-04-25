@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { v4 as uuidv4 } from "uuid";
+import { nanoid } from "nanoid";
 import Modal from "./components/Modal";
 
 export default function Home() {
@@ -12,7 +12,7 @@ export default function Home() {
 
   const handleStart = () => {
     if (!playerName.trim()) return;
-    const roomId = uuidv4(); // Generate unique room ID
+    const roomId = nanoid(6); // Generate unique room ID
     router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}`);
   };
   return (
