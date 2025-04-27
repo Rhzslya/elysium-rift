@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { socket } from "../../../lib/socketClient";
 
@@ -8,12 +8,11 @@ export default function GameRoom() {
   const { roomId } = useParams();
   const searchParams = useSearchParams();
   const playerName = searchParams.get("name");
+  const router = useRouter();
 
   const [log, setLog] = useState<string[]>([]);
   const [players, setPlayers] = useState<string[]>([]);
   const [message, setMessage] = useState<string[]>([]);
-
-  console.log(playerName);
 
   useEffect(() => {
     if (!playerName) return;
@@ -29,7 +28,11 @@ export default function GameRoom() {
     socket.emit("join-room", roomId, playerName);
 
     socket.on("update-players", (playersList: string[]) => {
-      setPlayers(playersList);
+      if (playersList) {
+        setPlayers(playersList);
+      } else {
+        setPlayers([]);
+      }
     });
 
     return () => {
@@ -45,11 +48,23 @@ export default function GameRoom() {
       }
     });
 
+    socket.on("user-left", (data) => {
+      if (!message.includes(`${data.username} left the room`)) {
+        setMessage((prev) => [...prev, `${data.username} left the room`]);
+      }
+    });
+
     return () => {
       socket.off("user-joined");
       socket.off("message");
+      socket.off("user-left");
     };
   }, [message]);
+
+  const handleExitRoom = () => {
+    socket.emit("exit-room", roomId, playerName);
+    router.push("/");
+  };
 
   return (
     <main className="min-h-screen text-white p-6 flex flex-col items-center">
@@ -79,7 +94,12 @@ export default function GameRoom() {
         <h2 className="text-lg font-semibold mb-2">Players List</h2>
         <ul className="space-y-1 text-sm">
           {players.map((player, index) => (
-            <li key={index}>
+            <li
+              key={index}
+              className={
+                player === playerName ? "text-amber-400 font-bold" : ""
+              }
+            >
               {index + 1}. {player}
             </li>
           ))}
@@ -106,6 +126,14 @@ export default function GameRoom() {
             Send
           </button>
         </form>
+        <div className="exit-btn mt-3 mr-auto">
+          <button
+            onClick={handleExitRoom}
+            className="cursor-pointer bg-red-400 hover:bg-red-600 px-4 py-2 rounded text-black font-semibold"
+          >
+            Exit
+          </button>
+        </div>
       </section>
     </main>
   );

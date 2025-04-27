@@ -24,7 +24,9 @@ app.prepare().then(() => {
           const player = io.sockets.sockets.get(id);
           return player?.data.username; // Mengakses username dari socket.data
         });
-        io.to(roomId).emit("update-players", players); // Kirim daftar pemain ke semua yang ada di room
+        io.to(roomId).emit("update-players", players);
+
+        return players; // Kirim daftar pemain ke semua yang ada di room
       }
     };
 
@@ -48,6 +50,18 @@ app.prepare().then(() => {
       updatePlayersList(roomId);
 
       socket.to(roomId).emit("user-joined", { username });
+    });
+
+    socket.on("exit-room", (roomId, username) => {
+      socket.leave(roomId);
+
+      setTimeout(() => {
+        // kasih delay dikit biar socket.leave selesai
+        updatePlayersList(roomId);
+      }, 0);
+
+      console.log(`User ${username} left room ${roomId}`);
+      io.to(roomId).emit("user-left", { username });
     });
 
     socket.on("disconnect", () => {
