@@ -1,20 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
-import Modal from "./components/Modal";
+import Modal from "../components/Modal";
+import { socket } from "@/lib/socketClient";
+import ModalJoinRoom from "@/components/ModalJoinRoom";
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
   const [showStartModal, setShowStartModal] = useState(false);
   const router = useRouter();
+  const [roomCode, setRoomCode] = useState("");
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleStart = () => {
     if (!playerName.trim()) return;
-    const roomId = nanoid(6); // Generate unique room ID
+    const roomId = nanoid(6);
     router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}`);
+
+    if (roomId && playerName) {
+      socket.emit("join-room", roomId, playerName);
+    }
   };
+
+  const handleJoinRoom = () => {
+    if (!roomCode.trim() || !playerName.trim()) return;
+
+    socket.emit("check-room", roomCode, (exists: boolean) => {
+      if (exists) {
+        router.push(`/game/${roomCode}?name=${encodeURIComponent(playerName)}`);
+        socket.emit("join-room", roomCode, playerName);
+      } else {
+        setMessage("Room not found!");
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (message) {
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+    }
+  });
   return (
     <main className="flex flex-col items-center justify-center min-h-screen text-white p-4">
       <h1 className="text-5xl font-extrabold mb-6 tracking-wide text-amber-400">
@@ -31,7 +61,10 @@ export default function Home() {
         >
           Start Game
         </button>
-        <button className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 rounded-xl shadow-md transition">
+        <button
+          onClick={() => setShowJoinModal(true)}
+          className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 rounded-xl shadow-md transition"
+        >
           Join Room
         </button>
         <button className="border border-gray-600 hover:border-gray-400 text-gray-300 hover:text-white py-3 rounded-xl shadow-md transition">
@@ -44,6 +77,17 @@ export default function Home() {
           setPlayerName={setPlayerName}
           setShowStartModal={setShowStartModal}
           handleStart={handleStart}
+        />
+      )}
+      {showJoinModal && (
+        <ModalJoinRoom
+          playerName={playerName}
+          roomCode={roomCode}
+          setPlayerName={setPlayerName}
+          setRoomCode={setRoomCode}
+          setShowJoinModal={setShowJoinModal}
+          handleJoin={handleJoinRoom}
+          message={message}
         />
       )}
     </main>
