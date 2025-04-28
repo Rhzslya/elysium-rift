@@ -16,17 +16,21 @@ app.prepare().then(() => {
   io.on("connection", (socket) => {
     console.log("User connected", socket.id);
 
-    // Fungsi untuk update daftar pemain di semua user dalam room
     const updatePlayersList = (roomId: string) => {
       const room = io.sockets.adapter.rooms.get(roomId);
       if (room) {
-        const players = Array.from(room).map((id) => {
-          const player = io.sockets.sockets.get(id);
-          return player?.data.username; // Mengakses username dari socket.data
-        });
+        const players = Array.from(room)
+          .map((id) => {
+            const player = io.sockets.sockets.get(id);
+            return player?.data.username; // Pastikan username ada di socket.data
+          })
+          .filter((username) => username !== undefined);
+
         io.to(roomId).emit("update-players", players);
 
-        return players; // Kirim daftar pemain ke semua yang ada di room
+        console.log(`Players in room ${roomId}: ${players}`);
+
+        return players;
       }
     };
 
@@ -41,15 +45,26 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("join-room", (roomId: string, username: string) => {
+    socket.on("join-room", ({ roomId, username }) => {
+      if (socket.rooms.has(roomId)) {
+        return; // sudah join, tidak perlu proses lagi
+      }
       socket.join(roomId);
+
       console.log(`User ${username} joined room ${roomId}`);
 
       socket.data.username = username;
 
-      updatePlayersList(roomId);
+      const players = updatePlayersList(roomId);
 
-      socket.to(roomId).emit("user-joined", { username });
+      socket.to(roomId).emit("update-players", players);
+
+      socket.to(roomId).emit("user-joined", `${username} has joined the game.`);
+    });
+
+    socket.on("message", ({ message, roomId, sender }) => {
+      console.log(`Message from ${sender} in room ${roomId}: ${message}`);
+      socket.to(roomId).emit("message", { sender, message });
     });
 
     socket.on("exit-room", (roomId, username) => {
@@ -61,7 +76,7 @@ app.prepare().then(() => {
       }, 0);
 
       console.log(`User ${username} left room ${roomId}`);
-      io.to(roomId).emit("user-left", { username });
+      io.to(roomId).emit("user-left", `${username} has left room.`);
     });
 
     socket.on("disconnect", () => {

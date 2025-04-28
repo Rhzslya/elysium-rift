@@ -19,10 +19,7 @@ export default function Home() {
     if (!playerName.trim()) return;
     const roomId = nanoid(6);
     router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}`);
-
-    if (roomId && playerName) {
-      socket.emit("join-room", roomId, playerName);
-    }
+    socket.emit("join-room", { roomId, username: playerName });
   };
 
   const handleJoinRoom = () => {
@@ -31,7 +28,6 @@ export default function Home() {
     socket.emit("check-room", roomCode, (exists: boolean) => {
       if (exists) {
         router.push(`/game/${roomCode}?name=${encodeURIComponent(playerName)}`);
-        socket.emit("join-room", roomCode, playerName);
       } else {
         setMessage("Room not found!");
       }
@@ -45,6 +41,7 @@ export default function Home() {
       }, 3000);
     }
   });
+
   return (
     <main className="flex flex-col items-center justify-center min-h-screen text-white p-4">
       <h1 className="text-5xl font-extrabold mb-6 tracking-wide text-amber-400">

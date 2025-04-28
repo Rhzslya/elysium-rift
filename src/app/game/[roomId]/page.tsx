@@ -3,6 +3,8 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { socket } from "../../../lib/socketClient";
+import BattleLogs from "@/components/BattleLogs";
+import ChatForm from "@/components/ChatForm";
 
 export default function GameRoom() {
   const { roomId } = useParams();
@@ -12,83 +14,77 @@ export default function GameRoom() {
 
   const [log, setLog] = useState<string[]>([]);
   const [players, setPlayers] = useState<string[]>([]);
-  const [message, setMessage] = useState<string[]>([]);
+  const [messages, setMessages] = useState<
+    { sender: string; message: string }[]
+  >([]);
+
+  const [hasJoined, setHasJoined] = useState(false);
 
   useEffect(() => {
-    if (!playerName) return;
+    if (!playerName || !roomId || hasJoined) return;
+    setPlayers([playerName]);
 
     // Simulasi log awal
-    setPlayers([playerName]);
-    setLog([
-      "Welcome to Elysium Rift.",
-      "You have entered the realm of Room ID: " + roomId,
-      "Prepare yourself...",
-    ]);
+    // setLog([
+    //   "Welcome to Elysium Rift.",
+    //   "You have entered the realm of Room ID: " + roomId,
+    //   "Prepare yourself...",
+    // ]);
 
-    socket.emit("join-room", roomId, playerName);
+    socket.emit("join-room", { roomId, username: playerName }); // Join room
+
+    setHasJoined(true);
+    socket.on("message", (data) => {
+      setMessages((prev) => [...prev, data]);
+    });
+
+    socket.on("user-joined", (message) => {
+      setMessages((prev) => [...prev, { sender: "system", message }]);
+    });
 
     socket.on("update-players", (playersList: string[]) => {
-      if (playersList) {
-        setPlayers(playersList);
-      } else {
-        setPlayers([]);
-      }
+      setPlayers([...playersList]);
+    });
+
+    socket.on("user-left", (message) => {
+      setMessages((prev) => [...prev, { sender: "system", message }]);
     });
 
     return () => {
-      socket.off("update-players");
-    };
-  }, [roomId]);
-
-  useEffect(() => {
-    // Hanya menambahkan pesan jika pemain baru belum ada di dalam daftar pesan
-    socket.on("user-joined", (data) => {
-      if (!message.includes(`${data.username} joined the room`)) {
-        setMessage((prev) => [...prev, `${data.username} joined the room`]);
-      }
-    });
-
-    socket.on("user-left", (data) => {
-      if (!message.includes(`${data.username} left the room`)) {
-        setMessage((prev) => [...prev, `${data.username} left the room`]);
-      }
-    });
-
-    return () => {
-      socket.off("user-joined");
-      socket.off("message");
+      socket.removeAllListeners("message");
+      socket.removeAllListeners("user-joined");
+      socket.removeAllListeners("update-players");
       socket.off("user-left");
     };
-  }, [message]);
+  }, [roomId, playerName, socket]);
 
   const handleExitRoom = () => {
     socket.emit("exit-room", roomId, playerName);
     router.push("/");
   };
 
+  const handleSendMessage = (message: string) => {
+    if (!playerName) return; // Tambah validasi biar aman
+    const data = { roomId, message, sender: playerName };
+    setMessages((prev) => [...prev, { sender: playerName, message }]);
+    socket.emit("message", data);
+  };
+
   return (
     <main className="min-h-screen text-white p-6 flex flex-col items-center">
       <h1 className="text-3xl font-bold text-amber-400 mb-4">Elysium Rift</h1>
       <p className="text-sm mb-6">Room: {roomId}</p>
-
-      <section className="bg-gray-800 p-4 rounded-lg w-full max-w-xl mb-4">
+      <div className="flex w-full max-w-xl h-[500px] overflow-y-auto p-4 mb-4 bg-gray-800 rounded-lg">
         <h2 className="text-lg font-semibold mb-2">Battle Log</h2>
-        <div className="h-56 overflow-y-auto space-y-1 text-sm">
-          {log.map((entry, index) => (
-            <p key={index}>➤ {entry}</p>
-          ))}
-          <div className="flex flex-col gap-2 w-full">
-            {message.map((msg, index) => (
-              <div
-                key={index}
-                className="flex justify-center items-center text-xs mx-auto bg-green-600 text-white p-2 rounded-lg mb-2 transition-all"
-              >
-                <p>{msg}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        {messages.map((msg, index) => (
+          <BattleLogs
+            key={index}
+            sender={msg.sender}
+            message={msg.message}
+            isOwnMessage={msg.sender === playerName}
+          />
+        ))}
+      </div>
 
       <section className="bg-gray-800 p-4 rounded-lg w-full max-w-xl mb-4">
         <h2 className="text-lg font-semibold mb-2">Players List</h2>
@@ -107,25 +103,7 @@ export default function GameRoom() {
       </section>
 
       <section className="w-full max-w-xl">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            // clear input
-          }}
-          className="flex gap-2"
-        >
-          <input
-            type="text"
-            className="flex-1 p-2 rounded bg-gray-700 outline-none"
-            placeholder="Type your action..."
-          />
-          <button
-            type="submit"
-            className="bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded text-black font-semibold"
-          >
-            Send
-          </button>
-        </form>
+        <ChatForm onSendMessage={handleSendMessage} />
         <div className="exit-btn mt-3 mr-auto">
           <button
             onClick={handleExitRoom}

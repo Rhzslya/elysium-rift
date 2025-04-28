@@ -2,15 +2,37 @@
 
 import React, { useState } from "react";
 
-const BattleLogs = ({ log }: { log: string[] }) => {
-  const [message, setMessage] = useState<string[]>([]);
+interface BattleLogsProps {
+  sender: string;
+  message: string;
+  isOwnMessage: boolean;
+}
+
+const BattleLogs = ({ sender, message, isOwnMessage }: BattleLogsProps) => {
+  const isSystemMessage = sender === "system";
   return (
-    <section className="bg-gray-800 p-4 rounded-lg w-full max-w-xl mb-4">
-      <h2 className="text-lg font-semibold mb-2">Battle Log</h2>
-      <div className="h-56 overflow-y-auto space-y-1 text-sm">
-        {log.map((entry, index) => (
-          <p key={index}>➤ {entry}</p>
-        ))}
+    <section className="">
+      <div
+        className={`flex ${
+          isSystemMessage
+            ? "justify-center"
+            : isOwnMessage
+            ? "justify-end"
+            : "justify-start"
+        } mb-3 text-sm`}
+      >
+        <div
+          className={`max-w-xs px-4 py-2 rounded-lg ${
+            isSystemMessage
+              ? "bg-gray-700 text-xs"
+              : isOwnMessage
+              ? "bg-green-600"
+              : "bg-red-600"
+          }`}
+        >
+          {!isSystemMessage && <p className="text-white font-bold">{sender}</p>}
+          <p>{message}</p>
+        </div>
       </div>
     </section>
   );
