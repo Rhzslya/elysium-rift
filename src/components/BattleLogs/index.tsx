@@ -1,37 +1,59 @@
-"use client";
+import React from "react";
+import BattleLogsChat from "../BattleLogsChat";
+import ChatForm from "../ChatForm";
 
-import React, { useState } from "react";
-
-interface BattleLogsProps {
-  sender: string;
-  message: string;
-  isOwnMessage: boolean;
-}
-
-const BattleLogs = ({ sender, message, isOwnMessage }: BattleLogsProps) => {
-  const isSystemMessage = sender === "system";
+const BattleLogs = ({
+  messages,
+  readyPlayers,
+  handleReady,
+  handleExitRoom,
+  handleSendMessage,
+}: {
+  messages: { sender: string; message: string }[];
+  readyPlayers: boolean;
+  handleReady: () => void;
+  handleExitRoom: () => void;
+  handleSendMessage: (message: string) => void;
+}) => {
   return (
-    <section className="">
-      <div
-        className={`flex ${
-          isSystemMessage
-            ? "justify-center"
-            : isOwnMessage
-            ? "justify-end"
-            : "justify-start"
-        } mb-3 text-sm`}
-      >
-        <div
-          className={`max-w-xs min-w-[120px] px-2 py-1 rounded-md ${
-            isSystemMessage
-              ? "bg-gray-500 text-neutral-200 text-center"
-              : isOwnMessage
-              ? "bg-blue-400 text-white"
-              : "bg-gray-600 text-white"
-          }`}
-        >
-          {!isSystemMessage && <p className="font-semibold">{sender}</p>}
-          <p className="text-sm">{message}</p>
+    <section className="battle-logs relative  min-h-screen text-white flex flex-col items-center">
+      <div className="flex flex-col w-full max-w-xl h-[500px] overflow-y-auto bg-gray-800 rounded-lg">
+        <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
+          <h2 className="text-2xl font-semibold">Battle Logs</h2>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 hide-scrollbar">
+          <BattleLogsChat />
+        </div>
+      </div>
+
+      <div className="w-full max-w-xl mt-3">
+        <ChatForm onSendMessage={handleSendMessage} />
+        <div className="flex items-center justify-center gap-2">
+          <div className="exit-btn mt-3 mr-auto">
+            <button
+              onClick={handleExitRoom}
+              className="cursor-pointer bg-red-400 hover:bg-red-600 px-4 py-2 rounded text-black font-semibold"
+            >
+              Exit
+            </button>
+          </div>
+
+          <div className="ready-btn mt-3 w-full">
+            <button
+              onClick={handleReady}
+              className={`w-full cursor-pointer px-4 py-2 rounded text-black font-semibold transition-colors duration-200
+${
+  readyPlayers
+    ? "bg-yellow-300 hover:bg-yellow-500"
+    : "bg-green-400 hover:bg-green-600"
+}
+`}
+              aria-pressed={readyPlayers}
+            >
+              {readyPlayers ? "Cancel Ready" : "I'm Ready"}
+            </button>
+          </div>
         </div>
       </div>
     </section>
