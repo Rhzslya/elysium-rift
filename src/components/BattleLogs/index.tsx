@@ -22,16 +22,16 @@ const BattleLogs = ({ sender, message, isOwnMessage }: BattleLogsProps) => {
         } mb-3 text-sm`}
       >
         <div
-          className={`max-w-xs px-4 py-2 rounded-lg ${
+          className={`max-w-xs min-w-[120px] px-2 py-1 rounded-md ${
             isSystemMessage
-              ? "bg-gray-700 text-xs"
+              ? "bg-gray-500 text-neutral-200 text-center"
               : isOwnMessage
-              ? "bg-green-600"
-              : "bg-red-600"
+              ? "bg-blue-400 text-white"
+              : "bg-gray-600 text-white"
           }`}
         >
-          {!isSystemMessage && <p className="text-white font-bold">{sender}</p>}
-          <p>{message}</p>
+          {!isSystemMessage && <p className="font-semibold">{sender}</p>}
+          <p className="text-sm">{message}</p>
         </div>
       </div>
     </section>

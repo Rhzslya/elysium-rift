@@ -13,6 +13,7 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   const httpServer = createServer(handle);
   const io = new Server(httpServer);
+
   io.on("connection", (socket) => {
     console.log("User connected", socket.id);
 
@@ -22,13 +23,18 @@ app.prepare().then(() => {
         const players = Array.from(room)
           .map((id) => {
             const player = io.sockets.sockets.get(id);
-            return player?.data.username; // Pastikan username ada di socket.data
+            return {
+              username: player?.data.username,
+              isReady: player?.data.isReady || false,
+            };
           })
           .filter((username) => username !== undefined);
 
         io.to(roomId).emit("update-players", players);
 
-        console.log(`Players in room ${roomId}: ${players}`);
+        console.log(
+          `Players in room ${roomId}: ${players.map((p) => p.username)}`
+        );
 
         return players;
       }
@@ -67,7 +73,31 @@ app.prepare().then(() => {
       socket.to(roomId).emit("message", { sender, message });
     });
 
+    socket.on("player-ready", ({ roomId, username, isReady }) => {
+      socket.data.isReady = isReady;
+
+      const room = io.sockets.adapter.rooms.get(roomId);
+      if (room) {
+        const players = Array.from(room).map((id) => {
+          const playerSocket = io.sockets.sockets.get(id);
+          return {
+            username: playerSocket?.data.username,
+            isReady: playerSocket?.data.isReady || false,
+          };
+        });
+
+        io.to(roomId).emit("update-players", players);
+        console.log(
+          `${username} is now ${
+            isReady ? "ready" : "not ready"
+          } in room ${roomId}`
+        );
+      }
+    });
+
     socket.on("exit-room", (roomId, username) => {
+      socket.data.isReady = false;
+
       socket.leave(roomId);
 
       setTimeout(() => {
@@ -80,6 +110,7 @@ app.prepare().then(() => {
     });
 
     socket.on("disconnect", () => {
+      socket.data.isReady = false;
       console.log("User disconnected", socket.id);
     });
   });
