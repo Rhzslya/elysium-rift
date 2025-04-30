@@ -3,7 +3,6 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { socket } from "../../../lib/socketClient";
-import ChatBox from "@/components/ChatBox";
 import PlayerList from "@/components/PlayerList";
 import BattleLogs from "@/components/BattleLogs";
 import ChatContainer from "@/components/ChatContainer";
@@ -14,9 +13,11 @@ export default function GameRoom() {
   const playerName = searchParams.get("name");
   const router = useRouter();
   const [readyPlayers, setReadyPlayers] = useState(false);
+  const [countdown, setCountdown] = useState<number>(5);
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameStartMessage, setGameStartMessage] = useState("");
 
-  const [log, setLog] = useState<string[]>([]);
+  const [logs, setLogs] = useState<{ sender: string; message: string }[]>([]);
   const [players, setPlayers] = useState<
     { username: string; isReady: boolean }[]
   >([]);
@@ -33,8 +34,8 @@ export default function GameRoom() {
     if (!playerName || !roomId || hasJoined) return;
     setPlayers([{ username: playerName, isReady: false }]);
 
-    // Simulasi log awal
-    // setLog([
+    // Simulasi logs awal
+    // setLogs([
     //   "Welcome to Elysium Rift.",
     //   "You have entered the realm of Room ID: " + roomId,
     //   "Prepare yourself...",
@@ -44,7 +45,13 @@ export default function GameRoom() {
 
     setHasJoined(true);
     socket.on("message", (data) => {
-      setMessages((prev) => [...prev, data]);
+      const { sender, message } = data;
+
+      if (sender === "systemBattleLogs") {
+        setLogs((prev) => [...prev, { sender, message }]);
+      } else {
+        setMessages((prev) => [...prev, { sender, message }]); // Masukkan ke chat biasa
+      }
     });
 
     socket.on("user-joined", (message) => {
@@ -71,13 +78,20 @@ export default function GameRoom() {
   }, [roomId, playerName, socket]);
 
   const handleReady = () => {
-    socket.emit("player-ready", {
+    const newIsReady = !readyPlayers;
+
+    socket.emit("game-start", {
       roomId,
-      username: playerName,
-      isReady: !readyPlayers,
+      isReady: newIsReady,
+      countdown: countdown,
+      gameStarted: gameStarted,
     });
 
-    setReadyPlayers(!readyPlayers);
+    setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    setReadyPlayers(newIsReady);
   };
 
   const handleExitRoom = () => {
@@ -111,7 +125,7 @@ export default function GameRoom() {
         playerName={playerName}
       />
       <BattleLogs
-        messages={messages}
+        logs={logs}
         readyPlayers={readyPlayers}
         handleReady={handleReady}
         handleExitRoom={handleExitRoom}

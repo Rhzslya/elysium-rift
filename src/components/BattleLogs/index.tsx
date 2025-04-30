@@ -3,13 +3,13 @@ import BattleLogsChat from "../BattleLogsChat";
 import ChatForm from "../ChatForm";
 
 const BattleLogs = ({
-  messages,
+  logs,
   readyPlayers,
   handleReady,
   handleExitRoom,
   handleSendMessage,
 }: {
-  messages: { sender: string; message: string }[];
+  logs: { sender: string; message: string }[];
   readyPlayers: boolean;
   handleReady: () => void;
   handleExitRoom: () => void;
@@ -23,7 +23,13 @@ const BattleLogs = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2 hide-scrollbar">
-          <BattleLogsChat />
+          {logs.map((log, index) => (
+            <BattleLogsChat
+              sender={log.sender}
+              message={log.message}
+              key={index}
+            />
+          ))}
         </div>
       </div>
 

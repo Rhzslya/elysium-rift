@@ -13,6 +13,7 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   const httpServer = createServer(handle);
   const io = new Server(httpServer);
+  const roomCountdowns = new Map<string, NodeJS.Timeout>();
 
   io.on("connection", (socket) => {
     console.log("User connected", socket.id);
@@ -92,6 +93,39 @@ app.prepare().then(() => {
             isReady ? "ready" : "not ready"
           } in room ${roomId}`
         );
+      }
+    });
+
+    socket.on("game-start", ({ roomId, isReady, countdown }) => {
+      socket.data.isReady = isReady;
+
+      console.log(`Game Start in room ${roomId} with countdown ${countdown}`);
+      const room = io.sockets.adapter.rooms.get(roomId);
+      if (room) {
+        const players = Array.from(room).map((id) => {
+          const playerSocket = io.sockets.sockets.get(id);
+          return {
+            username: playerSocket?.data.username,
+            isReady: playerSocket?.data.isReady || false,
+          };
+        });
+
+        const allReady = players.every((player) => player.isReady);
+        console.log(`All Player Ready: ${allReady}`);
+
+        io.to(roomId).emit("update-players", players);
+
+        if (allReady) {
+          io.to(roomId).emit("message", {
+            sender: "systemBattleLogs",
+            message: "All players are ready. Game starting!",
+          });
+        } else {
+          io.to(roomId).emit("message", {
+            sender: "systemBattleLogs",
+            message: "Waiting for all players to be ready.",
+          });
+        }
       }
     });
 
