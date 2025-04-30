@@ -3,12 +3,14 @@ import BattleLogsChat from "../BattleLogsChat";
 import ChatForm from "../ChatForm";
 
 const BattleLogs = ({
+  countdown,
   logs,
   readyPlayers,
   handleReady,
   handleExitRoom,
   handleSendMessage,
 }: {
+  countdown: number | null;
   logs: { sender: string; message: string }[];
   readyPlayers: boolean;
   handleReady: () => void;
@@ -45,21 +47,23 @@ const BattleLogs = ({
             </button>
           </div>
 
-          <div className="ready-btn mt-3 w-full">
-            <button
-              onClick={handleReady}
-              className={`w-full cursor-pointer px-4 py-2 rounded text-black font-semibold transition-colors duration-200
+          {countdown === null && (
+            <div className="ready-btn mt-3 w-full">
+              <button
+                onClick={handleReady}
+                className={`w-full cursor-pointer px-4 py-2 rounded text-black font-semibold transition-colors duration-200
 ${
   readyPlayers
     ? "bg-yellow-300 hover:bg-yellow-500"
     : "bg-green-400 hover:bg-green-600"
 }
 `}
-              aria-pressed={readyPlayers}
-            >
-              {readyPlayers ? "Cancel Ready" : "I'm Ready"}
-            </button>
-          </div>
+                aria-pressed={readyPlayers}
+              >
+                {readyPlayers ? "Cancel Ready" : "I'm Ready"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </section>

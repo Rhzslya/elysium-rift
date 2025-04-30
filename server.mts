@@ -13,7 +13,7 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   const httpServer = createServer(handle);
   const io = new Server(httpServer);
-  const roomCountdowns = new Map<string, NodeJS.Timeout>();
+  const roomCountdowns: { [roomId: string]: NodeJS.Timeout } = {};
 
   io.on("connection", (socket) => {
     console.log("User connected", socket.id);
@@ -116,15 +116,41 @@ app.prepare().then(() => {
         io.to(roomId).emit("update-players", players);
 
         if (allReady) {
-          io.to(roomId).emit("message", {
-            sender: "systemBattleLogs",
-            message: "All players are ready. Game starting!",
-          });
+          if (roomCountdowns[roomId]) return;
+
+          let countdown = 5;
+          io.sockets.emit("countdown", countdown);
+
+          const countdownInterval = setInterval(() => {
+            countdown -= 1;
+            io.to(roomId).emit("countdown", countdown);
+
+            if (countdown <= 0) {
+              clearInterval(countdownInterval);
+              delete roomCountdowns[roomId];
+
+              io.to(roomId).emit("game-started", true);
+            }
+          }, 1000);
+
+          roomCountdowns[roomId] = countdownInterval;
         } else {
-          io.to(roomId).emit("message", {
-            sender: "systemBattleLogs",
-            message: "Waiting for all players to be ready.",
-          });
+          // Jika ada yang batal siap, batalkan countdown
+          if (roomCountdowns[roomId]) {
+            clearInterval(roomCountdowns[roomId]);
+            delete roomCountdowns[roomId];
+
+            io.to(roomId).emit("countdown", null); // Reset countdown di client
+            io.to(roomId).emit("message", {
+              sender: "systemBattleLogs",
+              message: "A player is not ready. Countdown canceled.",
+            });
+          } else {
+            io.to(roomId).emit("message", {
+              sender: "systemBattleLogs",
+              message: "Waiting for all players to be ready.",
+            });
+          }
         }
       }
     });

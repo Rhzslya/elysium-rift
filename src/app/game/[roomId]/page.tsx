@@ -13,10 +13,9 @@ export default function GameRoom() {
   const playerName = searchParams.get("name");
   const router = useRouter();
   const [readyPlayers, setReadyPlayers] = useState(false);
-  const [countdown, setCountdown] = useState<number>(5);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
-  const [gameStartMessage, setGameStartMessage] = useState("");
-
+  const [countdownMessage, setCountdownMessage] = useState<string | null>(null);
   const [logs, setLogs] = useState<{ sender: string; message: string }[]>([]);
   const [players, setPlayers] = useState<
     { username: string; isReady: boolean }[]
@@ -25,21 +24,11 @@ export default function GameRoom() {
     { sender: string; message: string }[]
   >([]);
   const chatAreaRef = useRef<HTMLDivElement>(null);
-
-  const [isSystemMessage, setIsSystemMessage] = useState("");
-
   const [hasJoined, setHasJoined] = useState(false);
 
   useEffect(() => {
     if (!playerName || !roomId || hasJoined) return;
     setPlayers([{ username: playerName, isReady: false }]);
-
-    // Simulasi logs awal
-    // setLogs([
-    //   "Welcome to Elysium Rift.",
-    //   "You have entered the realm of Room ID: " + roomId,
-    //   "Prepare yourself...",
-    // ]);
 
     socket.emit("join-room", { roomId, username: playerName }); // Join room
 
@@ -84,15 +73,38 @@ export default function GameRoom() {
       roomId,
       isReady: newIsReady,
       countdown: countdown,
-      gameStarted: gameStarted,
     });
-
-    setInterval(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
 
     setReadyPlayers(newIsReady);
   };
+
+  useEffect(() => {
+    const handleCountdown = (value: number | null) => {
+      setCountdown(value);
+
+      if (value === 0) {
+        setCountdown(null);
+      }
+    };
+
+    const handleGameStarted = (started: boolean) => {
+      setGameStarted(started);
+    };
+
+    socket.on("countdown", handleCountdown);
+    socket.on("game-started", handleGameStarted);
+
+    // Optional: emit untuk sync status saat client baru masuk
+    socket.emit("game-started", handleGameStarted);
+
+    return () => {
+      socket.off("countdown", handleCountdown);
+      socket.off("game-started", handleGameStarted);
+    };
+  }, []);
+
+  console.log(countdown);
+  console.log(gameStarted);
 
   const handleExitRoom = () => {
     socket.emit("exit-room", roomId, playerName);
@@ -125,6 +137,7 @@ export default function GameRoom() {
         playerName={playerName}
       />
       <BattleLogs
+        countdown={countdown}
         logs={logs}
         readyPlayers={readyPlayers}
         handleReady={handleReady}
