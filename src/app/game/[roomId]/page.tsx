@@ -81,10 +81,6 @@ export default function GameRoom() {
   useEffect(() => {
     const handleCountdown = (value: number | null) => {
       setCountdown(value);
-
-      if (value === 0) {
-        setCountdown(null);
-      }
     };
 
     const handleGameStarted = (started: boolean) => {

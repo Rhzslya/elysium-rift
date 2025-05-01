@@ -47,7 +47,7 @@ const BattleLogs = ({
             </button>
           </div>
 
-          {countdown === null && (
+          {countdown !== 0 && (
             <div className="ready-btn mt-3 w-full">
               <button
                 onClick={handleReady}
