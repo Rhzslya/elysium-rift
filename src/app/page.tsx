@@ -25,13 +25,24 @@ export default function Home() {
   const handleJoinRoom = () => {
     if (!roomCode.trim() || !playerName.trim()) return;
 
-    socket.emit("check-room", roomCode, (exists: boolean) => {
-      if (exists) {
-        router.push(`/game/${roomCode}?name=${encodeURIComponent(playerName)}`);
-      } else {
-        setMessage("Room not found!");
+    socket.emit(
+      "check-room",
+      roomCode,
+      (exists: boolean, gameStarted: boolean) => {
+        if (exists) {
+          // Room ada dan game belum dimulai
+          router.push(
+            `/game/${roomCode}?name=${encodeURIComponent(playerName)}`
+          );
+        } else if (gameStarted) {
+          // Room tidak bisa diakses karena game sudah mulai
+          setMessage("Game already started!");
+        } else {
+          // Room tidak ditemukan
+          setMessage("Room not found!");
+        }
       }
-    });
+    );
   };
 
   useEffect(() => {

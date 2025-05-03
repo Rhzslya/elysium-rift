@@ -63,6 +63,7 @@ export default function GameRoom() {
       socket.removeAllListeners("user-joined");
       socket.removeAllListeners("update-players");
       socket.off("user-left");
+      socket.off("game-started");
     };
   }, [roomId, playerName, socket]);
 
@@ -98,9 +99,6 @@ export default function GameRoom() {
       socket.off("game-started", handleGameStarted);
     };
   }, []);
-
-  console.log(countdown);
-  console.log(gameStarted);
 
   const handleExitRoom = () => {
     socket.emit("exit-room", roomId, playerName);

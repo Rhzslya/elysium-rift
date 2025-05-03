@@ -13,6 +13,10 @@ const Modal: FC<ModalProps> = ({
   setShowStartModal,
   handleStart,
 }) => {
+  const handleCancel = () => {
+    setShowStartModal(false);
+    setPlayerName("");
+  };
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
       <div className="bg-gray-800 p-6 rounded-xl shadow-xl w-80">
@@ -28,7 +32,7 @@ const Modal: FC<ModalProps> = ({
         />
         <div className="flex justify-end gap-2">
           <button
-            onClick={() => setShowStartModal(false)}
+            onClick={handleCancel}
             className="text-gray-400 hover:text-white"
           >
             Cancel

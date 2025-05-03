@@ -13,7 +13,12 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   const httpServer = createServer(handle);
   const io = new Server(httpServer);
-  const roomCountdowns: { [roomId: string]: NodeJS.Timeout } = {};
+  const roomStates: {
+    [roomId: string]: {
+      countdownTimer?: NodeJS.Timeout;
+      gameStarted: boolean;
+    };
+  } = {};
 
   io.on("connection", (socket) => {
     console.log("User connected", socket.id);
@@ -42,13 +47,21 @@ app.prepare().then(() => {
     };
 
     socket.on("check-room", (roomId, callback) => {
+      const gameStarted = roomStates[roomId]?.gameStarted ?? false;
+
+      if (gameStarted) {
+        console.log(`Room ${roomId} already started.`);
+        callback(false, true); // Room exists but game already started
+        return;
+      }
+
       const room = io.sockets.adapter.rooms.get(roomId);
       if (room) {
         console.log(`Room ${roomId} exists.`);
-        callback(true);
+        callback(true, false); // Room exists and not started
       } else {
         console.log(`Room ${roomId} not found.`);
-        callback(false); // Room tidak ada
+        callback(false, false); // Room doesn't exist
       }
     });
 
@@ -57,10 +70,21 @@ app.prepare().then(() => {
         return; // sudah join, tidak perlu proses lagi
       }
       socket.join(roomId);
+      socket.data.username = username;
+      socket.data.isReady = false;
+
+      if (roomStates[roomId]?.countdownTimer) {
+        clearInterval(roomStates[roomId].countdownTimer);
+        roomStates[roomId].countdownTimer = undefined;
+
+        io.to(roomId).emit("countdown", null);
+        io.to(roomId).emit("message", {
+          sender: "systemBattleLogs",
+          message: `${username} joined. Countdown canceled.`,
+        });
+      }
 
       console.log(`User ${username} joined room ${roomId}`);
-
-      socket.data.username = username;
 
       const players = updatePlayersList(roomId);
 
@@ -115,8 +139,12 @@ app.prepare().then(() => {
 
         io.to(roomId).emit("update-players", players);
 
-        if (allReady) {
-          if (roomCountdowns[roomId]) return;
+        if (players.length > 1 && allReady) {
+          if (!roomStates[roomId]) {
+            roomStates[roomId] = { gameStarted: false };
+          }
+
+          if (roomStates[roomId].countdownTimer) return;
 
           let countdown = 5;
           io.sockets.emit("countdown", countdown);
@@ -127,18 +155,18 @@ app.prepare().then(() => {
 
             if (countdown <= 0) {
               clearInterval(countdownInterval);
-              delete roomCountdowns[roomId];
-
+              roomStates[roomId].countdownTimer = undefined;
+              roomStates[roomId].gameStarted = true;
               io.to(roomId).emit("game-started", true);
             }
           }, 1000);
 
-          roomCountdowns[roomId] = countdownInterval;
+          roomStates[roomId].countdownTimer = countdownInterval;
         } else {
           // Jika ada yang batal siap, batalkan countdown
-          if (roomCountdowns[roomId]) {
-            clearInterval(roomCountdowns[roomId]);
-            delete roomCountdowns[roomId];
+          if (roomStates[roomId]?.countdownTimer) {
+            clearInterval(roomStates[roomId].countdownTimer);
+            roomStates[roomId].countdownTimer = undefined;
 
             io.to(roomId).emit("countdown", null); // Reset countdown di client
             io.to(roomId).emit("message", {
