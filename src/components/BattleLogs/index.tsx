@@ -9,6 +9,8 @@ const BattleLogs = ({
   handleReady,
   handleExitRoom,
   handleSendMessage,
+  players,
+  currentUsername, // tambahkan ini
 }: {
   countdown: number | null;
   logs: { sender: string; message: string }[];
@@ -16,7 +18,12 @@ const BattleLogs = ({
   handleReady: () => void;
   handleExitRoom: () => void;
   handleSendMessage: (message: string) => void;
+  players: { username: string; isReady: boolean }[];
+  currentUsername: string | null; // tambahkan tipe ini juga
 }) => {
+  const currentPlayer = players.find((p) => p.username === currentUsername);
+  const isReady = currentPlayer?.isReady ?? false;
+
   return (
     <section className="battle-logs relative  min-h-screen text-white flex flex-col items-center">
       <div className="flex flex-col w-full max-w-xl h-[500px] overflow-y-auto bg-gray-800 rounded-lg">
@@ -46,15 +53,14 @@ const BattleLogs = ({
               <button
                 onClick={handleReady}
                 className={`w-full cursor-pointer px-4 py-2 rounded text-black font-semibold transition-colors duration-200
-${
-  readyPlayers
-    ? "bg-yellow-300 hover:bg-yellow-500"
-    : "bg-green-400 hover:bg-green-600"
-}
-`}
-                aria-pressed={readyPlayers}
+        ${
+          isReady
+            ? "bg-yellow-300 hover:bg-yellow-500"
+            : "bg-green-400 hover:bg-green-600"
+        }`}
+                aria-pressed={isReady}
               >
-                {readyPlayers ? "Cancel Ready" : "I'm Ready"}
+                {isReady ? "Cancel Ready" : "I'm Ready"}
               </button>
             </div>
           )}

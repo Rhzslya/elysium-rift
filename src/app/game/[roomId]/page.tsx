@@ -20,6 +20,7 @@ export default function GameRoom() {
   const [players, setPlayers] = useState<
     { username: string; isReady: boolean }[]
   >([]);
+
   const [messages, setMessages] = useState<
     { sender: string; message: string }[]
   >([]);
@@ -54,6 +55,10 @@ export default function GameRoom() {
       }
     );
 
+    socket.on("not-enough-players", ({ message }) => {
+      alert(message);
+    });
+
     socket.on("user-left", (message) => {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
@@ -64,21 +69,27 @@ export default function GameRoom() {
       socket.removeAllListeners("update-players");
       socket.off("user-left");
       socket.off("game-started");
+      socket.off("not-enough-players");
     };
   }, [roomId, playerName, socket]);
 
   const handleReady = () => {
-    const newIsReady = !readyPlayers;
+    if (players.length <= 1) {
+      alert("Tidak cukup pemain untuk memulai game.");
+      return;
+    }
+
+    const currentPlayer = players.find((p) => p.username === playerName);
+    const newIsReady = !currentPlayer?.isReady;
 
     socket.emit("game-start", {
       roomId,
       isReady: newIsReady,
       countdown: countdown,
     });
-
-    setReadyPlayers(newIsReady);
   };
 
+  console.log(players.length);
   useEffect(() => {
     const handleCountdown = (value: number | null) => {
       setCountdown(value);
@@ -119,6 +130,9 @@ export default function GameRoom() {
     }
   }, [messages]);
 
+  console.log(readyPlayers);
+  console.log(players);
+
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-[0.5fr_1fr_0.5fr] gap-4">
       <div className="title col-span-3 flex flex-col items-center">
@@ -137,6 +151,8 @@ export default function GameRoom() {
         handleReady={handleReady}
         handleExitRoom={handleExitRoom}
         handleSendMessage={handleSendMessage}
+        players={players}
+        currentUsername={playerName}
       />
       <PlayerList playerName={playerName} players={players} />
     </main>

@@ -23,27 +23,31 @@ app.prepare().then(() => {
   io.on("connection", (socket) => {
     console.log("User connected", socket.id);
 
-    const updatePlayersList = (roomId: string) => {
+    const updatePlayersList = (roomId: string, resetReady = false) => {
       const room = io.sockets.adapter.rooms.get(roomId);
-      if (room) {
-        const players = Array.from(room)
-          .map((id) => {
-            const player = io.sockets.sockets.get(id);
-            return {
-              username: player?.data.username,
-              isReady: player?.data.isReady || false,
-            };
-          })
-          .filter((username) => username !== undefined);
+      if (!room) return;
 
-        io.to(roomId).emit("update-players", players);
+      const players = Array.from(room)
+        .map((id) => {
+          const player = io.sockets.sockets.get(id);
+          if (!player) return undefined;
 
-        console.log(
-          `Players in room ${roomId}: ${players.map((p) => p.username)}`
-        );
+          if (resetReady) player.data.isReady = false;
 
-        return players;
-      }
+          return {
+            username: player?.data.username,
+            isReady: player?.data.isReady || false,
+          };
+        })
+        .filter((username) => username !== undefined);
+
+      io.to(roomId).emit("update-players", players);
+
+      console.log(
+        `Players in room ${roomId}: ${players.map((p) => p.username)}`
+      );
+
+      return players;
     };
 
     socket.on("check-room", (roomId, callback) => {
@@ -162,6 +166,18 @@ app.prepare().then(() => {
           }, 1000);
 
           roomStates[roomId].countdownTimer = countdownInterval;
+
+          socket.emit("ready-status-updated", { isReady: true });
+        } else if (players.length <= 1) {
+          console.log(
+            `Cannot Ready because there are one player in room ${roomId}`
+          );
+
+          socket.emit("not-enough-players", {
+            message: "You can't ready up. Not enough players in the room.",
+          });
+
+          socket.emit("ready-status-updated", { isReady: false });
         } else {
           // Jika ada yang batal siap, batalkan countdown
           if (roomStates[roomId]?.countdownTimer) {
@@ -173,12 +189,9 @@ app.prepare().then(() => {
               sender: "systemBattleLogs",
               message: "A player is not ready. Countdown canceled.",
             });
-          } else {
-            io.to(roomId).emit("message", {
-              sender: "systemBattleLogs",
-              message: "Waiting for all players to be ready.",
-            });
           }
+
+          socket.emit("ready-status-updated", { isReady });
         }
       }
     });
@@ -190,7 +203,7 @@ app.prepare().then(() => {
 
       setTimeout(() => {
         // kasih delay dikit biar socket.leave selesai
-        updatePlayersList(roomId);
+        updatePlayersList(roomId, true);
       }, 0);
 
       console.log(`User ${username} left room ${roomId}`);
