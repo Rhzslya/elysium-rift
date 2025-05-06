@@ -3,19 +3,18 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { socket } from "../../../lib/socketClient";
-import PlayerList from "@/components/PlayerList";
 import BattleLogs from "@/components/BattleLogs";
 import ChatContainer from "@/components/ChatContainer";
+import PlayerInfo from "@/components/PlayerInfo";
 
 export default function GameRoom() {
   const { roomId } = useParams();
   const searchParams = useSearchParams();
   const playerName = searchParams.get("name");
   const router = useRouter();
-  const [readyPlayers, setReadyPlayers] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
-  const [countdownMessage, setCountdownMessage] = useState<string | null>(null);
+  const [tempMessage, setTempMessage] = useState<string | null>(null);
   const [logs, setLogs] = useState<{ sender: string; message: string }[]>([]);
   const [players, setPlayers] = useState<
     { username: string; isReady: boolean }[]
@@ -26,6 +25,11 @@ export default function GameRoom() {
   >([]);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const [hasJoined, setHasJoined] = useState(false);
+  const [availableRoles, setAvailableRoles] = useState<any>([]);
+  const [isChoosingRole, setIsChoosingRole] = useState(false);
+
+  console.log(availableRoles);
+  console.log(isChoosingRole);
 
   useEffect(() => {
     if (!playerName || !roomId || hasJoined) return;
@@ -40,7 +44,7 @@ export default function GameRoom() {
       if (sender === "systemBattleLogs") {
         setLogs((prev) => [...prev, { sender, message }]);
       } else {
-        setMessages((prev) => [...prev, { sender, message }]); // Masukkan ke chat biasa
+        setMessages((prev) => [...prev, { sender, message }]);
       }
     });
 
@@ -75,7 +79,7 @@ export default function GameRoom() {
 
   const handleReady = () => {
     if (players.length <= 1) {
-      alert("Tidak cukup pemain untuk memulai game.");
+      setTempMessage("Not enough players to start the game.");
       return;
     }
 
@@ -89,7 +93,6 @@ export default function GameRoom() {
     });
   };
 
-  console.log(players.length);
   useEffect(() => {
     const handleCountdown = (value: number | null) => {
       setCountdown(value);
@@ -97,6 +100,13 @@ export default function GameRoom() {
 
     const handleGameStarted = (started: boolean) => {
       setGameStarted(started);
+
+      if (started) {
+        socket.on("choose-role-phase", (rolesFromServer) => {
+          setAvailableRoles(rolesFromServer); // set ke state
+          setIsChoosingRole(true); // munculkan UI pemilihan role
+        });
+      }
     };
 
     socket.on("countdown", handleCountdown);
@@ -124,14 +134,18 @@ export default function GameRoom() {
   };
 
   useEffect(() => {
-    // Scroll ke bawah setiap kali messages berubah
     if (chatAreaRef.current) {
       chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
     }
   }, [messages]);
 
-  console.log(readyPlayers);
-  console.log(players);
+  setTimeout(() => {
+    if (tempMessage) {
+      setTempMessage("");
+    }
+  }, 3000);
+
+  console.log(availableRoles);
 
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-[0.5fr_1fr_0.5fr] gap-4">
@@ -147,14 +161,15 @@ export default function GameRoom() {
       <BattleLogs
         countdown={countdown}
         logs={logs}
-        readyPlayers={readyPlayers}
+        tempMessage={tempMessage}
         handleReady={handleReady}
         handleExitRoom={handleExitRoom}
         handleSendMessage={handleSendMessage}
         players={players}
         currentUsername={playerName}
+        availableRoles={availableRoles}
       />
-      <PlayerList playerName={playerName} players={players} />
+      <PlayerInfo playerName={playerName} players={players} />
     </main>
   );
 }

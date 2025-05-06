@@ -2,11 +2,10 @@
 import { createServer } from "node:http";
 import next from "next";
 import { Server } from "socket.io";
-
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME || "localhost";
 const port = parseInt(process.env.PORT || "3000", 10);
-
+import { roles } from "./src/utils/Roles/index.js";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
@@ -162,6 +161,9 @@ app.prepare().then(() => {
               roomStates[roomId].countdownTimer = undefined;
               roomStates[roomId].gameStarted = true;
               io.to(roomId).emit("game-started", true);
+
+              //Kirimkan list Role yang dapat dipilih Player
+              io.to(roomId).emit("choose-role-phase", roles);
             }
           }, 1000);
 

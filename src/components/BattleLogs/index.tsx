@@ -2,24 +2,39 @@ import React from "react";
 import BattleLogsChat from "../BattleLogsChat";
 import ChatForm from "../ChatForm";
 
+interface Role {
+  id: number;
+  name: string;
+  description: string;
+  stats: {
+    attack: number;
+    health: number;
+    defense: number;
+    speed: number;
+  };
+  passive: string;
+}
+
 const BattleLogs = ({
   countdown,
   logs,
-  readyPlayers,
   handleReady,
   handleExitRoom,
   handleSendMessage,
   players,
-  currentUsername, // tambahkan ini
+  currentUsername,
+  tempMessage,
+  availableRoles,
 }: {
   countdown: number | null;
   logs: { sender: string; message: string }[];
-  readyPlayers: boolean;
   handleReady: () => void;
   handleExitRoom: () => void;
   handleSendMessage: (message: string) => void;
   players: { username: string; isReady: boolean }[];
-  currentUsername: string | null; // tambahkan tipe ini juga
+  currentUsername: string | null;
+  tempMessage: string | null;
+  availableRoles: Role[];
 }) => {
   const currentPlayer = players.find((p) => p.username === currentUsername);
   const isReady = currentPlayer?.isReady ?? false;
@@ -32,7 +47,11 @@ const BattleLogs = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2 hide-scrollbar">
-          <BattleLogsChat logs={logs} countdown={countdown} />
+          <BattleLogsChat
+            logs={logs}
+            countdown={countdown}
+            tempMessage={tempMessage}
+          />
         </div>
       </div>
 
