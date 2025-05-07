@@ -111,6 +111,7 @@ app.prepare().then(() => {
           return {
             username: playerSocket?.data.username,
             isReady: playerSocket?.data.isReady || false,
+            roles: [],
           };
         });
 
@@ -134,6 +135,7 @@ app.prepare().then(() => {
           return {
             username: playerSocket?.data.username,
             isReady: playerSocket?.data.isReady || false,
+            roles: [],
           };
         });
 

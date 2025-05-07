@@ -17,7 +17,7 @@ export default function GameRoom() {
   const [tempMessage, setTempMessage] = useState<string | null>(null);
   const [logs, setLogs] = useState<{ sender: string; message: string }[]>([]);
   const [players, setPlayers] = useState<
-    { username: string; isReady: boolean }[]
+    { username: string; isReady: boolean; roles: string[] }[]
   >([]);
 
   const [messages, setMessages] = useState<
@@ -26,14 +26,11 @@ export default function GameRoom() {
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const [hasJoined, setHasJoined] = useState(false);
   const [availableRoles, setAvailableRoles] = useState<any>([]);
-  const [isChoosingRole, setIsChoosingRole] = useState(false);
-
-  console.log(availableRoles);
-  console.log(isChoosingRole);
+  const [hasChosenRole, setHasChosenRole] = useState(false);
 
   useEffect(() => {
     if (!playerName || !roomId || hasJoined) return;
-    setPlayers([{ username: playerName, isReady: false }]);
+    setPlayers([{ username: playerName, isReady: false, roles: [] }]);
 
     socket.emit("join-room", { roomId, username: playerName }); // Join room
 
@@ -54,7 +51,9 @@ export default function GameRoom() {
 
     socket.on(
       "update-players",
-      (playersList: { username: string; isReady: boolean }[]) => {
+      (
+        playersList: { username: string; isReady: boolean; roles: string[] }[]
+      ) => {
         setPlayers(playersList);
       }
     );
@@ -103,8 +102,8 @@ export default function GameRoom() {
 
       if (started) {
         socket.on("choose-role-phase", (rolesFromServer) => {
-          setAvailableRoles(rolesFromServer); // set ke state
-          setIsChoosingRole(true); // munculkan UI pemilihan role
+          setAvailableRoles(rolesFromServer);
+          setHasChosenRole(true);
         });
       }
     };
@@ -145,8 +144,6 @@ export default function GameRoom() {
     }
   }, 3000);
 
-  console.log(availableRoles);
-
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-[0.5fr_1fr_0.5fr] gap-4">
       <div className="title col-span-3 flex flex-col items-center">
@@ -168,6 +165,7 @@ export default function GameRoom() {
         players={players}
         currentUsername={playerName}
         availableRoles={availableRoles}
+        hasChosenRole={hasChosenRole}
       />
       <PlayerInfo playerName={playerName} players={players} />
     </main>

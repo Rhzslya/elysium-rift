@@ -25,6 +25,7 @@ const BattleLogs = ({
   currentUsername,
   tempMessage,
   availableRoles,
+  hasChosenRole,
 }: {
   countdown: number | null;
   logs: { sender: string; message: string }[];
@@ -35,6 +36,7 @@ const BattleLogs = ({
   currentUsername: string | null;
   tempMessage: string | null;
   availableRoles: Role[];
+  hasChosenRole: boolean;
 }) => {
   const currentPlayer = players.find((p) => p.username === currentUsername);
   const isReady = currentPlayer?.isReady ?? false;
@@ -51,6 +53,8 @@ const BattleLogs = ({
             logs={logs}
             countdown={countdown}
             tempMessage={tempMessage}
+            availableRoles={availableRoles}
+            hasChosenRole={hasChosenRole}
           />
         </div>
       </div>
