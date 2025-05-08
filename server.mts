@@ -177,10 +177,6 @@ app.prepare().then(() => {
             `Cannot Ready because there are one player in room ${roomId}`
           );
 
-          socket.emit("not-enough-players", {
-            message: "You can't ready up. Not enough players in the room.",
-          });
-
           socket.emit("ready-status-updated", { isReady: false });
         } else {
           // Jika ada yang batal siap, batalkan countdown
@@ -189,8 +185,7 @@ app.prepare().then(() => {
             roomStates[roomId].countdownTimer = undefined;
 
             io.to(roomId).emit("countdown", null); // Reset countdown di client
-            io.to(roomId).emit("message", {
-              sender: "systemBattleLogs",
+            io.to(roomId).emit("player-not-ready", {
               message: "A player is not ready. Countdown canceled.",
             });
           }
@@ -215,7 +210,40 @@ app.prepare().then(() => {
     });
 
     socket.on("disconnect", () => {
+      const roomId = Object.keys(socket.rooms)[1]; // Mengambil roomId, jika socket berada di dalam room
+
+      // Cek apakah game sudah dimulai
+      if (roomStates[roomId]?.gameStarted) {
+        // Jika game sudah dimulai, periksa jumlah pemain yang tersisa
+        const room = io.sockets.adapter.rooms.get(roomId);
+        if (room) {
+          const players = Array.from(room).map((id) => {
+            const playerSocket = io.sockets.sockets.get(id);
+            return {
+              username: playerSocket?.data.username,
+              isReady: playerSocket?.data.isReady || false,
+            };
+          });
+
+          // Jika hanya ada satu pemain atau lebih, game dibatalkan
+          if (players.length <= 1) {
+            roomStates[roomId].gameStarted = false;
+
+            // Emit event ke semua pemain di room untuk menginformasikan game telah dibatalkan
+            io.to(roomId).emit("game-started", false); // Mengirim false untuk status gameStarted
+
+            // Emit event untuk pemberitahuan bahwa game dibatalkan
+            io.to(roomId).emit("message", {
+              sender: "system",
+              message: "Game has been canceled because a player disconnected.",
+            });
+          }
+        }
+      }
+
+      // Hapus status isReady dan gameStarted dari socket yang disconnect
       socket.data.isReady = false;
+      socket.data.gameStarted = false;
       console.log("User disconnected", socket.id);
     });
   });

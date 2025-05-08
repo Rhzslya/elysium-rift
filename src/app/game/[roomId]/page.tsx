@@ -49,6 +49,10 @@ export default function GameRoom() {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
 
+    socket.on("player-not-ready", ({ message }) => {
+      setTempMessage(message);
+    });
+
     socket.on(
       "update-players",
       (
@@ -57,10 +61,6 @@ export default function GameRoom() {
         setPlayers(playersList);
       }
     );
-
-    socket.on("not-enough-players", ({ message }) => {
-      alert(message);
-    });
 
     socket.on("user-left", (message) => {
       setMessages((prev) => [...prev, { sender: "system", message }]);
@@ -72,18 +72,26 @@ export default function GameRoom() {
       socket.removeAllListeners("update-players");
       socket.off("user-left");
       socket.off("game-started");
-      socket.off("not-enough-players");
     };
   }, [roomId, playerName, socket]);
 
   const handleReady = () => {
     if (players.length <= 1) {
-      setTempMessage("Not enough players to start the game.");
+      setTempMessage(
+        "Not enough players to start the game. Please wait for the other player to join."
+      );
+
       return;
     }
 
     const currentPlayer = players.find((p) => p.username === playerName);
     const newIsReady = !currentPlayer?.isReady;
+
+    socket.emit("player-ready", {
+      roomId,
+      username: playerName,
+      isReady: newIsReady,
+    });
 
     socket.emit("game-start", {
       roomId,
@@ -99,13 +107,6 @@ export default function GameRoom() {
 
     const handleGameStarted = (started: boolean) => {
       setGameStarted(started);
-
-      if (started) {
-        socket.on("choose-role-phase", (rolesFromServer) => {
-          setAvailableRoles(rolesFromServer);
-          setHasChosenRole(true);
-        });
-      }
     };
 
     socket.on("countdown", handleCountdown);

@@ -40,6 +40,7 @@ const BattleLogs = ({
 }) => {
   const currentPlayer = players.find((p) => p.username === currentUsername);
   const isReady = currentPlayer?.isReady ?? false;
+  console.log(isReady);
 
   return (
     <section className="battle-logs relative  min-h-screen text-white flex flex-col items-center">
