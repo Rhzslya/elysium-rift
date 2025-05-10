@@ -22,7 +22,7 @@ const BattleLogs = ({
   handleExitRoom,
   handleSendMessage,
   players,
-  currentUsername,
+  userId,
   tempMessage,
   availableRoles,
   hasChosenRole,
@@ -32,15 +32,19 @@ const BattleLogs = ({
   handleReady: () => void;
   handleExitRoom: () => void;
   handleSendMessage: (message: string) => void;
-  players: { username: string; isReady: boolean }[];
-  currentUsername: string | null;
+  players: {
+    userId: string | undefined;
+    username: string;
+    isReady: boolean;
+    roles: string[];
+  }[];
+  userId: string | undefined;
   tempMessage: string | null;
   availableRoles: Role[];
   hasChosenRole: boolean;
 }) => {
-  const currentPlayer = players.find((p) => p.username === currentUsername);
+  const currentPlayer = players.find((p) => p.userId === userId);
   const isReady = currentPlayer?.isReady ?? false;
-  console.log(isReady);
 
   return (
     <section className="battle-logs relative  min-h-screen text-white flex flex-col items-center">

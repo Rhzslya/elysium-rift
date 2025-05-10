@@ -34,6 +34,7 @@ app.prepare().then(() => {
           if (resetReady) player.data.isReady = false;
 
           return {
+            userId: player?.data.userId,
             username: player?.data.username,
             isReady: player?.data.isReady || false,
           };
@@ -68,11 +69,12 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("join-room", ({ roomId, username }) => {
+    socket.on("join-room", ({ roomId, username, userId }) => {
       if (socket.rooms.has(roomId)) {
         return; // sudah join, tidak perlu proses lagi
       }
       socket.join(roomId);
+      socket.data.userId = userId;
       socket.data.username = username;
       socket.data.isReady = false;
 
@@ -87,7 +89,9 @@ app.prepare().then(() => {
         });
       }
 
-      console.log(`User ${username} joined room ${roomId}`);
+      console.log(
+        `User ${username} joined room ${roomId} with userId ${userId}`
+      );
 
       const players = updatePlayersList(roomId);
 
@@ -133,6 +137,7 @@ app.prepare().then(() => {
         const players = Array.from(room).map((id) => {
           const playerSocket = io.sockets.sockets.get(id);
           return {
+            userId: playerSocket?.data.userId,
             username: playerSocket?.data.username,
             isReady: playerSocket?.data.isReady || false,
             roles: [],
@@ -220,6 +225,7 @@ app.prepare().then(() => {
           const players = Array.from(room).map((id) => {
             const playerSocket = io.sockets.sockets.get(id);
             return {
+              userId: playerSocket?.data.userId,
               username: playerSocket?.data.username,
               isReady: playerSocket?.data.isReady || false,
             };

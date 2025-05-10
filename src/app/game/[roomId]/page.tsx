@@ -17,9 +17,14 @@ export default function GameRoom() {
   const [tempMessage, setTempMessage] = useState<string | null>(null);
   const [logs, setLogs] = useState<{ sender: string; message: string }[]>([]);
   const [players, setPlayers] = useState<
-    { username: string; isReady: boolean; roles: string[] }[]
+    {
+      userId: string | undefined;
+      username: string;
+      isReady: boolean;
+      roles: string[];
+    }[]
   >([]);
-
+  const [userId, setUserId] = useState<string | undefined>();
   const [messages, setMessages] = useState<
     { sender: string; message: string }[]
   >([]);
@@ -28,11 +33,25 @@ export default function GameRoom() {
   const [availableRoles, setAvailableRoles] = useState<any>([]);
   const [hasChosenRole, setHasChosenRole] = useState(false);
 
-  useEffect(() => {
-    if (!playerName || !roomId || hasJoined) return;
-    setPlayers([{ username: playerName, isReady: false, roles: [] }]);
+  console.log(userId);
+  console.log(players);
 
-    socket.emit("join-room", { roomId, username: playerName }); // Join room
+  useEffect(() => {
+    const storedUserId =
+      sessionStorage.getItem("userId") || crypto.randomUUID();
+    sessionStorage.setItem("userId", storedUserId);
+    setUserId(storedUserId);
+  }, []);
+
+  useEffect(() => {
+    if (!userId || !playerName || !roomId || hasJoined) return;
+
+    setPlayers([{ userId, username: playerName, isReady: false, roles: [] }]);
+    socket.emit("join-room", {
+      roomId,
+      username: playerName,
+      userId,
+    });
 
     setHasJoined(true);
     socket.on("message", (data) => {
@@ -56,7 +75,12 @@ export default function GameRoom() {
     socket.on(
       "update-players",
       (
-        playersList: { username: string; isReady: boolean; roles: string[] }[]
+        playersList: {
+          userId: string | undefined;
+          username: string;
+          isReady: boolean;
+          roles: string[];
+        }[]
       ) => {
         setPlayers(playersList);
       }
@@ -73,7 +97,7 @@ export default function GameRoom() {
       socket.off("user-left");
       socket.off("game-started");
     };
-  }, [roomId, playerName, socket]);
+  }, [userId, roomId, playerName, socket]);
 
   const handleReady = () => {
     if (players.length <= 1) {
@@ -84,7 +108,7 @@ export default function GameRoom() {
       return;
     }
 
-    const currentPlayer = players.find((p) => p.username === playerName);
+    const currentPlayer = players.find((p) => p.userId === userId);
     const newIsReady = !currentPlayer?.isReady;
 
     socket.emit("player-ready", {
@@ -145,6 +169,8 @@ export default function GameRoom() {
     }
   }, 3000);
 
+  console.log(players);
+
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-[0.5fr_1fr_0.5fr] gap-4">
       <div className="title col-span-3 flex flex-col items-center">
@@ -164,7 +190,7 @@ export default function GameRoom() {
         handleExitRoom={handleExitRoom}
         handleSendMessage={handleSendMessage}
         players={players}
-        currentUsername={playerName}
+        userId={userId}
         availableRoles={availableRoles}
         hasChosenRole={hasChosenRole}
       />
