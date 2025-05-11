@@ -64,12 +64,12 @@ export default function GameRoom() {
       }
     });
 
-    socket.on("user-joined", (message) => {
-      setMessages((prev) => [...prev, { sender: "system", message }]);
+    socket.on("temp-message", ({ message }) => {
+      setTempMessage(message);
     });
 
-    socket.on("player-not-ready", ({ message }) => {
-      setTempMessage(message);
+    socket.on("user-joined", (message) => {
+      setMessages((prev) => [...prev, { sender: "system", message }]);
     });
 
     socket.on(
@@ -94,6 +94,7 @@ export default function GameRoom() {
       socket.removeAllListeners("message");
       socket.removeAllListeners("user-joined");
       socket.removeAllListeners("update-players");
+      socket.removeAllListeners("game-started");
       socket.off("user-left");
       socket.off("game-started");
     };
@@ -136,9 +137,6 @@ export default function GameRoom() {
     socket.on("countdown", handleCountdown);
     socket.on("game-started", handleGameStarted);
 
-    // Optional: emit untuk sync status saat client baru masuk
-    socket.emit("game-started", handleGameStarted);
-
     return () => {
       socket.off("countdown", handleCountdown);
       socket.off("game-started", handleGameStarted);
@@ -169,7 +167,7 @@ export default function GameRoom() {
     }
   }, 3000);
 
-  console.log(players);
+  console.log(gameStarted);
 
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-[0.5fr_1fr_0.5fr] gap-4">

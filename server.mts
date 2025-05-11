@@ -83,9 +83,22 @@ app.prepare().then(() => {
         roomStates[roomId].countdownTimer = undefined;
 
         io.to(roomId).emit("countdown", null);
-        io.to(roomId).emit("message", {
-          sender: "systemBattleLogs",
+        io.to(roomId).emit("temp-message", {
           message: `${username} joined. Countdown canceled.`,
+        });
+      }
+
+      if (roomStates[roomId]?.gameStarted) {
+        clearInterval(roomStates[roomId].countdownTimer);
+        roomStates[roomId].countdownTimer = undefined;
+        io.to(roomId).emit("countdown", null);
+        roomStates[roomId].gameStarted = false;
+        console.log(`Player ${userId} rejoined. Resetting gameStarted.`);
+
+        // Kirim ke semua pemain di room bahwa game dibatalkan
+        io.to(roomId).emit("game-started", false);
+        io.to(roomId).emit("temp-message", {
+          message: `${username} Rejoined. Game has been canceled.`,
         });
       }
 
@@ -113,6 +126,7 @@ app.prepare().then(() => {
         const players = Array.from(room).map((id) => {
           const playerSocket = io.sockets.sockets.get(id);
           return {
+            userId: playerSocket?.data.userId,
             username: playerSocket?.data.username,
             isReady: playerSocket?.data.isReady || false,
             roles: [],
@@ -189,8 +203,8 @@ app.prepare().then(() => {
             clearInterval(roomStates[roomId].countdownTimer);
             roomStates[roomId].countdownTimer = undefined;
 
-            io.to(roomId).emit("countdown", null); // Reset countdown di client
-            io.to(roomId).emit("player-not-ready", {
+            io.to(roomId).emit("countdown", null);
+            io.to(roomId).emit("temp-message", {
               message: "A player is not ready. Countdown canceled.",
             });
           }
@@ -215,7 +229,7 @@ app.prepare().then(() => {
     });
 
     socket.on("disconnect", () => {
-      const roomId = Object.keys(socket.rooms)[1]; // Mengambil roomId, jika socket berada di dalam room
+      const roomId = Object.keys(socket.rooms)[1];
 
       // Cek apakah game sudah dimulai
       if (roomStates[roomId]?.gameStarted) {
@@ -230,20 +244,6 @@ app.prepare().then(() => {
               isReady: playerSocket?.data.isReady || false,
             };
           });
-
-          // Jika hanya ada satu pemain atau lebih, game dibatalkan
-          if (players.length <= 1) {
-            roomStates[roomId].gameStarted = false;
-
-            // Emit event ke semua pemain di room untuk menginformasikan game telah dibatalkan
-            io.to(roomId).emit("game-started", false); // Mengirim false untuk status gameStarted
-
-            // Emit event untuk pemberitahuan bahwa game dibatalkan
-            io.to(roomId).emit("message", {
-              sender: "system",
-              message: "Game has been canceled because a player disconnected.",
-            });
-          }
         }
       }
 
