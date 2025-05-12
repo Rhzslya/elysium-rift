@@ -1,19 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import BattleLogsChat from "../BattleLogsChat";
 import ChatForm from "../ChatForm";
-
-interface Role {
-  id: number;
-  name: string;
-  description: string;
-  stats: {
-    attack: number;
-    health: number;
-    defense: number;
-    speed: number;
-  };
-  passive: string;
-}
+import { socket } from "@/lib/socketClient";
+import { Player, Role } from "@/utils/Type";
 
 const BattleLogs = ({
   countdown,
@@ -22,29 +11,39 @@ const BattleLogs = ({
   handleExitRoom,
   handleSendMessage,
   players,
+  setPlayers,
   userId,
   tempMessage,
-  availableRoles,
-  hasChosenRole,
+  gameStarted,
+  handleSelectionRoles,
 }: {
   countdown: number | null;
   logs: { sender: string; message: string }[];
   handleReady: () => void;
   handleExitRoom: () => void;
   handleSendMessage: (message: string) => void;
-  players: {
-    userId: string | undefined;
-    username: string;
-    isReady: boolean;
-    roles: string[];
-  }[];
+  players: Player[];
+  setPlayers: (players: Player[]) => void;
   userId: string | undefined;
   tempMessage: string | null;
-  availableRoles: Role[];
-  hasChosenRole: boolean;
+  gameStarted: boolean;
+  handleSelectionRoles: (role: Role) => void;
 }) => {
   const currentPlayer = players.find((p) => p.userId === userId);
   const isReady = currentPlayer?.isReady ?? false;
+  const [availableRoles, setAvailableRoles] = useState<any>([]);
+  const [hasChosenRole, setHasChosenRole] = useState(false);
+
+  useEffect(() => {
+    socket.on("choose-role-phase", (roles: Role[]) => {
+      setAvailableRoles(roles);
+      setHasChosenRole(true);
+    });
+
+    return () => {
+      socket.removeAllListeners("choose-role-phase");
+    };
+  }, [gameStarted]);
 
   return (
     <section className="battle-logs relative  min-h-screen text-white flex flex-col items-center">
@@ -60,6 +59,11 @@ const BattleLogs = ({
             tempMessage={tempMessage}
             availableRoles={availableRoles}
             hasChosenRole={hasChosenRole}
+            gameStarted={gameStarted}
+            players={players}
+            setPlayers={setPlayers}
+            userId={userId}
+            handleSelectionRoles={handleSelectionRoles}
           />
         </div>
       </div>

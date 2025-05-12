@@ -37,6 +37,7 @@ app.prepare().then(() => {
             userId: player?.data.userId,
             username: player?.data.username,
             isReady: player?.data.isReady || false,
+            roles: player?.data.roles || null,
           };
         })
         .filter((username) => username !== undefined);
@@ -129,7 +130,7 @@ app.prepare().then(() => {
             userId: playerSocket?.data.userId,
             username: playerSocket?.data.username,
             isReady: playerSocket?.data.isReady || false,
-            roles: [],
+            roles: null,
           };
         });
 
@@ -154,7 +155,7 @@ app.prepare().then(() => {
             userId: playerSocket?.data.userId,
             username: playerSocket?.data.username,
             isReady: playerSocket?.data.isReady || false,
-            roles: [],
+            roles: null,
           };
         });
 
@@ -212,6 +213,36 @@ app.prepare().then(() => {
           socket.emit("ready-status-updated", { isReady });
         }
       }
+    });
+
+    socket.on("player-selected-role", ({ roomId, userId, role }) => {
+      const room = io.sockets.adapter.rooms.get(roomId);
+      if (!room) return;
+
+      console.log(
+        `Player ${userId} selected role ${role.name} in room ${roomId}`
+      );
+
+      for (const id of room) {
+        const s = io.sockets.sockets.get(id);
+        if (!s) continue;
+
+        if (s.data.userId === userId) {
+          s.data.roles = role;
+        }
+      }
+
+      const players = Array.from(room).map((id) => {
+        const s = io.sockets.sockets.get(id);
+        return {
+          userId: s?.data.userId,
+          username: s?.data.username,
+          isReady: s?.data.isReady || false,
+          roles: s?.data.roles || null,
+        };
+      });
+
+      io.to(roomId).emit("update-players", players);
     });
 
     socket.on("exit-room", (roomId, username) => {

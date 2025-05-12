@@ -6,6 +6,7 @@ import { socket } from "../../../lib/socketClient";
 import BattleLogs from "@/components/BattleLogs";
 import ChatContainer from "@/components/ChatContainer";
 import PlayerInfo from "@/components/PlayerInfo";
+import { Player, Role } from "@/utils/Type";
 
 export default function GameRoom() {
   const { roomId } = useParams();
@@ -16,25 +17,13 @@ export default function GameRoom() {
   const [gameStarted, setGameStarted] = useState(false);
   const [tempMessage, setTempMessage] = useState<string | null>(null);
   const [logs, setLogs] = useState<{ sender: string; message: string }[]>([]);
-  const [players, setPlayers] = useState<
-    {
-      userId: string | undefined;
-      username: string;
-      isReady: boolean;
-      roles: string[];
-    }[]
-  >([]);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [userId, setUserId] = useState<string | undefined>();
   const [messages, setMessages] = useState<
     { sender: string; message: string }[]
   >([]);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const [hasJoined, setHasJoined] = useState(false);
-  const [availableRoles, setAvailableRoles] = useState<any>([]);
-  const [hasChosenRole, setHasChosenRole] = useState(false);
-
-  console.log(userId);
-  console.log(players);
 
   useEffect(() => {
     const storedUserId =
@@ -46,7 +35,7 @@ export default function GameRoom() {
   useEffect(() => {
     if (!userId || !playerName || !roomId || hasJoined) return;
 
-    setPlayers([{ userId, username: playerName, isReady: false, roles: [] }]);
+    setPlayers([{ userId, username: playerName, isReady: false, roles: null }]);
     socket.emit("join-room", {
       roomId,
       username: playerName,
@@ -72,19 +61,9 @@ export default function GameRoom() {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
 
-    socket.on(
-      "update-players",
-      (
-        playersList: {
-          userId: string | undefined;
-          username: string;
-          isReady: boolean;
-          roles: string[];
-        }[]
-      ) => {
-        setPlayers(playersList);
-      }
-    );
+    socket.on("update-players", (playersList: Player[]) => {
+      setPlayers(playersList);
+    });
 
     socket.on("user-left", (message) => {
       setMessages((prev) => [...prev, { sender: "system", message }]);
@@ -167,7 +146,10 @@ export default function GameRoom() {
     }
   }, 3000);
 
-  console.log(gameStarted);
+  const handleSelectionRoles = (role: Role) => {
+    console.log("Selected role:", role);
+    socket.emit("player-selected-role", { roomId, userId, role });
+  };
 
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-[0.5fr_1fr_0.5fr] gap-4">
@@ -188,9 +170,10 @@ export default function GameRoom() {
         handleExitRoom={handleExitRoom}
         handleSendMessage={handleSendMessage}
         players={players}
+        setPlayers={setPlayers}
         userId={userId}
-        availableRoles={availableRoles}
-        hasChosenRole={hasChosenRole}
+        gameStarted={gameStarted}
+        handleSelectionRoles={handleSelectionRoles}
       />
       <PlayerInfo playerName={playerName} players={players} />
     </main>
