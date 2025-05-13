@@ -250,8 +250,30 @@ app.prepare().then(() => {
 
       socket.leave(roomId);
 
+      if (roomStates[roomId]?.countdownTimer) {
+        clearInterval(roomStates[roomId].countdownTimer);
+        roomStates[roomId].countdownTimer = undefined;
+
+        io.to(roomId).emit("countdown", null);
+        io.to(roomId).emit("temp-message", {
+          message: `${username} has left. Countdown canceled.`,
+        });
+      }
+
+      if (roomStates[roomId]?.gameStarted) {
+        clearInterval(roomStates[roomId].countdownTimer);
+        roomStates[roomId].countdownTimer = undefined;
+        io.to(roomId).emit("countdown", null);
+        roomStates[roomId].gameStarted = false;
+        console.log(`${username} Has left. Resetting gameStarted.`);
+
+        io.to(roomId).emit("game-started", false);
+        io.to(roomId).emit("temp-message", {
+          message: `${username} has left. Game has been canceled.`,
+        });
+      }
+
       setTimeout(() => {
-        // kasih delay dikit biar socket.leave selesai
         updatePlayersList(roomId, true);
       }, 0);
 
