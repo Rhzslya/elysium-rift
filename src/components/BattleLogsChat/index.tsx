@@ -6,31 +6,23 @@ const BattleLogsChat = ({
   logs,
   countdown,
   tempMessage,
-  availableRoles,
-  hasChosenRole,
   gameStarted,
-  players,
-  setPlayers,
-  userId,
   handleSelectionRoles,
+  hasChosenRole,
+  availableRoles,
 }: {
   logs: { sender: string; message: string }[];
   countdown: number | null;
   tempMessage: string | null;
   availableRoles: Role[];
-  hasChosenRole: boolean;
   gameStarted: boolean;
-  players: Player[];
-  setPlayers: (players: Player[]) => void;
-  userId: string | undefined;
   handleSelectionRoles: (role: Role) => void;
+  hasChosenRole: boolean;
 }) => {
-  console.log(players);
-
   return (
     <section>
       <div className="flex justify-center items-center mb-3 text-sm">
-        {hasChosenRole && gameStarted ? (
+        {!hasChosenRole && gameStarted && availableRoles ? (
           <div className="selection-roles">
             <div className="selection-role-title">
               <h1 className="text-xl font-semibold text-amber-400">
@@ -41,7 +33,9 @@ const BattleLogsChat = ({
                   <div className="flex flex-start" key={role.id}>
                     <button
                       onClick={() => handleSelectionRoles(role)}
-                      className="bg-gray-800 text-white rounded-xl border-[1px] border-white cursor-pointer shadow-md p-4 text-left"
+                      className="bg-gray-800 text-white rounded-xl border border-white cursor-pointer shadow-md p-4 text-left 
+                 transform transition-all duration-200 ease-in-out 
+                 hover:scale-105 hover:bg-gray-700 hover:shadow-lg"
                     >
                       <h2 className="text-lg font-bold text-amber-300 mb-1">
                         {role.name}
@@ -49,7 +43,7 @@ const BattleLogsChat = ({
                       <p className="text-sm text-gray-300 mb-2">
                         {role.description}
                       </p>
-                      <div className="text-xs text-gray-400 mb-2">
+                      <div className="text-xs text-gray-400 mb-2 space-y-1">
                         <p>🗡️ Attack: {role.stats.attack}</p>
                         <p>❤️ Health: {role.stats.health}</p>
                         <p>🛡️ Defense: {role.stats.defense}</p>

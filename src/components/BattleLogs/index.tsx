@@ -11,11 +11,11 @@ const BattleLogs = ({
   handleExitRoom,
   handleSendMessage,
   players,
-  setPlayers,
   userId,
   tempMessage,
   gameStarted,
   handleSelectionRoles,
+  hasChosenRole,
 }: {
   countdown: number | null;
   logs: { sender: string; message: string }[];
@@ -28,16 +28,15 @@ const BattleLogs = ({
   tempMessage: string | null;
   gameStarted: boolean;
   handleSelectionRoles: (role: Role) => void;
+  hasChosenRole: boolean;
 }) => {
   const currentPlayer = players.find((p) => p.userId === userId);
   const isReady = currentPlayer?.isReady ?? false;
   const [availableRoles, setAvailableRoles] = useState<any>([]);
-  const [hasChosenRole, setHasChosenRole] = useState(false);
 
   useEffect(() => {
     socket.on("choose-role-phase", (roles: Role[]) => {
       setAvailableRoles(roles);
-      setHasChosenRole(true);
     });
 
     return () => {
@@ -58,12 +57,9 @@ const BattleLogs = ({
             countdown={countdown}
             tempMessage={tempMessage}
             availableRoles={availableRoles}
-            hasChosenRole={hasChosenRole}
             gameStarted={gameStarted}
-            players={players}
-            setPlayers={setPlayers}
-            userId={userId}
             handleSelectionRoles={handleSelectionRoles}
+            hasChosenRole={hasChosenRole}
           />
         </div>
       </div>

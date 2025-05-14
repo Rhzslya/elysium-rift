@@ -15,6 +15,7 @@ app.prepare().then(() => {
   const roomStates: {
     [roomId: string]: {
       countdownTimer?: NodeJS.Timeout;
+      autoAssignTimeout?: NodeJS.Timeout;
       gameStarted: boolean;
     };
   } = {};
@@ -172,7 +173,8 @@ app.prepare().then(() => {
           if (roomStates[roomId].countdownTimer) return;
 
           let countdown = 5;
-          io.sockets.emit("countdown", countdown);
+
+          io.to(roomId).emit("countdown", countdown);
 
           const countdownInterval = setInterval(() => {
             countdown -= 1;
@@ -184,7 +186,6 @@ app.prepare().then(() => {
               roomStates[roomId].gameStarted = true;
               io.to(roomId).emit("game-started", true);
 
-              //Kirimkan list Role yang dapat dipilih Player
               io.to(roomId).emit("choose-role-phase", roles);
             }
           }, 1000);
@@ -229,20 +230,91 @@ app.prepare().then(() => {
 
         if (s.data.userId === userId) {
           s.data.roles = role;
+          s.data.roleSelected = true;
         }
       }
 
       const players = Array.from(room).map((id) => {
         const s = io.sockets.sockets.get(id);
         return {
+          socketId: id,
           userId: s?.data.userId,
           username: s?.data.username,
           isReady: s?.data.isReady || false,
           roles: s?.data.roles || null,
+          roleSelected: s?.data.roleSelected || false,
         };
       });
 
       io.to(roomId).emit("update-players", players);
+
+      console.log(`role selected: ${players.map((p) => p.roleSelected)}`);
+
+      const allSelected = players.every((p) => p.roleSelected);
+      const notifiedPlayers = players.filter((p) => p.roleSelected);
+      const waitingPlayers = players.filter((p) => !p.roleSelected);
+      if (allSelected) {
+        if (roomStates[roomId]?.autoAssignTimeout) {
+          clearTimeout(roomStates[roomId].autoAssignTimeout);
+          delete roomStates[roomId].autoAssignTimeout;
+        }
+
+        notifiedPlayers.forEach((p) => {
+          io.to(p.socketId).emit("clear-message", {
+            messageId: "waiting-role",
+          });
+        });
+
+        return;
+      }
+
+      if (!roomStates[roomId]?.autoAssignTimeout) {
+        notifiedPlayers.forEach((p) => {
+          io.to(p.socketId).emit("message", {
+            message: "Waiting for other players to choose role.",
+            sender: "systemBattleLogs",
+            messageId: "waiting-role",
+          });
+        });
+
+        roomStates[roomId].autoAssignTimeout = setTimeout(() => {
+          notifiedPlayers.forEach((p) => {
+            io.to(p.socketId).emit("clear-message", {
+              messageId: "waiting-role",
+            });
+          });
+
+          waitingPlayers.forEach((p) => {
+            const randomRole = roles[Math.floor(Math.random() * roles.length)];
+
+            const playerIndex = players.findIndex(
+              (pl) => pl.userId === p.userId
+            );
+            if (playerIndex !== -1) {
+              players[playerIndex].roles = randomRole;
+              players[playerIndex].roleSelected = true;
+            }
+
+            io.to(p.socketId).emit("temp-message", {
+              message: `You have been automatically assigned the ${randomRole.name} role.`,
+            });
+
+            io.to(p.socketId).emit("auto-role-selected", {
+              roomId,
+              userId: p.userId,
+              role: randomRole,
+              roleSelected: true,
+            });
+
+            io.to(p.socketId).emit("clear-message", {
+              messageId: "waiting-your-turn",
+            });
+          });
+
+          io.to(roomId).emit("update-players", players);
+          delete roomStates[roomId].autoAssignTimeout;
+        }, 5000);
+      }
     });
 
     socket.on("exit-room", (roomId, username) => {

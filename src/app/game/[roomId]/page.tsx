@@ -16,14 +16,17 @@ export default function GameRoom() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [tempMessage, setTempMessage] = useState<string | null>(null);
-  const [logs, setLogs] = useState<{ sender: string; message: string }[]>([]);
+  const [logs, setLogs] = useState<
+    { sender: string; message: string; messageId?: string }[]
+  >([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [userId, setUserId] = useState<string | undefined>();
   const [messages, setMessages] = useState<
-    { sender: string; message: string }[]
+    { sender: string; message: string; messageId?: string }[]
   >([]);
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const [hasJoined, setHasJoined] = useState(false);
+  const [hasChosenRole, setHasChosenRole] = useState(false);
 
   useEffect(() => {
     const storedUserId =
@@ -44,13 +47,18 @@ export default function GameRoom() {
 
     setHasJoined(true);
     socket.on("message", (data) => {
-      const { sender, message } = data;
+      const { sender, message, messageId } = data;
 
       if (sender === "systemBattleLogs") {
-        setLogs((prev) => [...prev, { sender, message }]);
+        setLogs((prev) => [...prev, { sender, message, messageId }]);
       } else {
-        setMessages((prev) => [...prev, { sender, message }]);
+        setMessages((prev) => [...prev, { sender, message, messageId }]);
       }
+    });
+
+    socket.on("clear-message", ({ messageId }) => {
+      setMessages((prev) => prev.filter((msg) => msg.messageId !== messageId));
+      setLogs((prev) => prev.filter((msg) => msg.messageId !== messageId));
     });
 
     socket.on("temp-message", ({ message }) => {
@@ -65,19 +73,39 @@ export default function GameRoom() {
       setPlayers(playersList);
     });
 
+    socket.on("auto-role-selected", ({ userId, role, roleSelected }) => {
+      setPlayers((prev) =>
+        prev.map((player) => {
+          if (player.userId === userId) {
+            return {
+              ...player,
+              roles: role,
+              roleSelected,
+            };
+          }
+
+          return player;
+        })
+      );
+
+      setHasChosenRole(true);
+    });
+
     socket.on("user-left", (message) => {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
 
     return () => {
-      socket.removeAllListeners("message");
-      socket.removeAllListeners("user-joined");
-      socket.removeAllListeners("update-players");
-      socket.removeAllListeners("game-started");
+      socket.off("message");
+      socket.off("user-joined");
+      socket.off("update-players");
+      socket.off("game-started");
       socket.off("user-left");
       socket.off("game-started");
+      socket.off("auto-role-selected");
     };
   }, [userId, roomId, playerName, socket]);
+  console.log(players);
 
   const handleReady = () => {
     if (players.length <= 1) {
@@ -147,8 +175,8 @@ export default function GameRoom() {
   }, 3000);
 
   const handleSelectionRoles = (role: Role) => {
-    console.log("Selected role:", role);
     socket.emit("player-selected-role", { roomId, userId, role });
+    setHasChosenRole(true);
   };
 
   return (
@@ -174,8 +202,9 @@ export default function GameRoom() {
         userId={userId}
         gameStarted={gameStarted}
         handleSelectionRoles={handleSelectionRoles}
+        hasChosenRole={hasChosenRole}
       />
-      <PlayerInfo playerName={playerName} players={players} />
+      <PlayerInfo playerName={playerName} players={players} userId={userId} />
     </main>
   );
 }
