@@ -1,18 +1,23 @@
 import React from "react";
 import ChatBox from "../ChatBox";
+import { Stage } from "@/utils/Type";
+import EnemiesList from "../EnemiesList";
 
-const ChatContainer = ({
+const BoxRight = ({
   chatAreaRef,
   messages,
   playerName,
+  stage,
 }: {
   chatAreaRef: React.RefObject<HTMLDivElement | null>;
   messages: { sender: string; message: string }[];
   playerName: string | null;
+  stage: Stage | null;
 }) => {
+  const enemies = stage?.enemies ?? [];
   return (
-    <section className="relative msg-box min-h-screen text-white flex flex-col items-center">
-      <div className="flex flex-col w-full max-w-xl h-[500px] bg-gray-800 rounded-lg overflow-hidden">
+    <section className="relative msg-box min-h-screen text-white flex flex-col gap-4 items-center">
+      <div className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto bg-gray-800 rounded-lg">
         {/* Fixed title */}
         <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
           <h2 className="text-2xl font-semibold">Chat Box</h2>
@@ -33,8 +38,9 @@ const ChatContainer = ({
           ))}
         </div>
       </div>
+      <EnemiesList enemies={enemies} />
     </section>
   );
 };
 
-export default ChatContainer;
+export default BoxRight;

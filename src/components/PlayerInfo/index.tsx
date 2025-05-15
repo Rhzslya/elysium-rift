@@ -29,7 +29,7 @@ const PlayerInfo = ({
   const currentPlayer = players.find((player) => player.userId === userId);
 
   return (
-    <section className="player-list rrelative  min-h-screen text-white flex flex-col gap-4 items-center">
+    <section className="player-list relative  min-h-screen text-white flex flex-col gap-4 items-center">
       <div className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto bg-gray-800 rounded-lg">
         <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
           <h2 className="text-2xl font-semibold">Player List</h2>
@@ -63,7 +63,7 @@ const PlayerInfo = ({
           </ul>
         </div>
       </div>
-      <div className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto bg-gray-800 rounded-lg">
+      <div className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto bg-gray-800 rounded-lg hide-scrollbar">
         <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
           <h2 className="text-2xl font-semibold text-white">Your Status</h2>
         </div>

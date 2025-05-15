@@ -1,6 +1,5 @@
-import { socket } from "@/lib/socketClient";
-import { Player, Role } from "@/utils/Type";
-import React, { useEffect } from "react";
+import { Role } from "@/utils/Type";
+import React from "react";
 
 const BattleLogsChat = ({
   logs,

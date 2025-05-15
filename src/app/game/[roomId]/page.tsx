@@ -4,9 +4,9 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { socket } from "../../../lib/socketClient";
 import BattleLogs from "@/components/BattleLogs";
-import ChatContainer from "@/components/ChatContainer";
+import BoxRight from "@/components/BoxRight";
 import PlayerInfo from "@/components/PlayerInfo";
-import { Player, Role } from "@/utils/Type";
+import { Enemies, Player, Role } from "@/utils/Type";
 
 export default function GameRoom() {
   const { roomId } = useParams();
@@ -27,12 +27,18 @@ export default function GameRoom() {
   const chatAreaRef = useRef<HTMLDivElement>(null);
   const [hasJoined, setHasJoined] = useState(false);
   const [hasChosenRole, setHasChosenRole] = useState(false);
+  const [stage, setStage] = useState<{
+    stageId: number;
+    stageName: string;
+    intro: string;
+    enemies: Enemies[];
+  } | null>(null);
 
   useEffect(() => {
-    const storedUserId =
-      sessionStorage.getItem("userId") || crypto.randomUUID();
-    sessionStorage.setItem("userId", storedUserId);
-    setUserId(storedUserId);
+    const storedUserId = sessionStorage.getItem("userId");
+    if (storedUserId) {
+      setUserId(storedUserId);
+    }
   }, []);
 
   useEffect(() => {
@@ -46,6 +52,7 @@ export default function GameRoom() {
     });
 
     setHasJoined(true);
+
     socket.on("message", (data) => {
       const { sender, message, messageId } = data;
 
@@ -71,6 +78,10 @@ export default function GameRoom() {
 
     socket.on("update-players", (playersList: Player[]) => {
       setPlayers(playersList);
+    });
+
+    socket.on("stage-started", ({ stageId, stageName, intro, enemies }) => {
+      setStage({ stageId, stageName, intro, enemies });
     });
 
     socket.on("auto-role-selected", ({ userId, role, roleSelected }) => {
@@ -103,6 +114,7 @@ export default function GameRoom() {
       socket.off("user-left");
       socket.off("game-started");
       socket.off("auto-role-selected");
+      socket.off("stage-started");
     };
   }, [userId, roomId, playerName, socket]);
   console.log(players);
@@ -185,10 +197,11 @@ export default function GameRoom() {
         <h1 className="text-3xl font-bold text-amber-400 mb-4">Elysium Rift</h1>
         <p className="text-sm mb-6">Room: {roomId}</p>
       </div>
-      <ChatContainer
+      <BoxRight
         chatAreaRef={chatAreaRef}
         messages={messages}
         playerName={playerName}
+        stage={stage}
       />
       <BattleLogs
         countdown={countdown}

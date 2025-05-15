@@ -15,11 +15,16 @@ export default function Home() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [message, setMessage] = useState("");
 
+  useEffect(() => {
+    const storedUserId =
+      sessionStorage.getItem("userId") || crypto.randomUUID();
+    sessionStorage.setItem("userId", storedUserId);
+  }, []);
+
   const handleStart = () => {
     if (!playerName.trim()) return;
     const roomId = nanoid(6);
     router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}`);
-    socket.emit("join-room", { roomId, username: playerName });
   };
 
   const handleJoinRoom = () => {
@@ -30,15 +35,12 @@ export default function Home() {
       roomCode,
       (exists: boolean, gameStarted: boolean) => {
         if (exists) {
-          // Room ada dan game belum dimulai
           router.push(
             `/game/${roomCode}?name=${encodeURIComponent(playerName)}`
           );
         } else if (gameStarted) {
-          // Room tidak bisa diakses karena game sudah mulai
           setMessage("Game already started!");
         } else {
-          // Room tidak ditemukan
           setMessage("Room not found!");
         }
       }

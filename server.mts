@@ -6,17 +6,21 @@ const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME || "localhost";
 const port = parseInt(process.env.PORT || "3000", 10);
 import { roles } from "./src/utils/Roles/index.js";
+import { stages } from "./src/utils/Stages/index.js";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   const httpServer = createServer(handle);
   const io = new Server(httpServer);
+
   const roomStates: {
     [roomId: string]: {
       countdownTimer?: NodeJS.Timeout;
       autoAssignTimeout?: NodeJS.Timeout;
-      gameStarted: boolean;
+      gameStarted?: boolean;
+      stageNumber?: number;
+      battleStarted?: boolean;
     };
   } = {};
 
@@ -50,6 +54,33 @@ app.prepare().then(() => {
       );
 
       return players;
+    };
+
+    const startStage = (roomId: string, stageId: number) => {
+      const room = io.sockets.adapter.rooms.get(roomId);
+      if (!room) return;
+
+      const stage = stages.find((s) => s.id === stageId);
+      if (!stage) return;
+
+      if (!roomStates[roomId]) {
+        roomStates[roomId] = {
+          stageNumber: stageId,
+          battleStarted: true,
+        };
+      } else {
+        roomStates[roomId].stageNumber = stageId;
+        roomStates[roomId].battleStarted = true;
+      }
+
+      io.to(roomId).emit("stage-started", {
+        stageId: stage.id,
+        stageName: stage.name,
+        intro: stage.intro,
+        enemies: stage.enemies,
+      });
+
+      console.log(`Stage ${stageId} started in room ${roomId}`);
     };
 
     socket.on("check-room", (roomId, callback) => {
@@ -265,6 +296,7 @@ app.prepare().then(() => {
           });
         });
 
+        startStage(roomId, 1);
         return;
       }
 
@@ -311,6 +343,7 @@ app.prepare().then(() => {
             });
           });
 
+          startStage(roomId, 1);
           io.to(roomId).emit("update-players", players);
           delete roomStates[roomId].autoAssignTimeout;
         }, 5000);
