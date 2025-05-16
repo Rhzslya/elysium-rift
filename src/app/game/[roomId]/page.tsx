@@ -31,8 +31,11 @@ export default function GameRoom() {
     stageId: number;
     stageName: string;
     intro: string;
-    enemies: Enemies[];
+    enemies: Enemies[]; // enemies untuk stage saat ini
   } | null>(null);
+  const enemies = stage?.enemies ?? []; // enemies untuk stage saat ini
+  const currentPlayer = players.find((p) => p.userId === userId);
+  console.log(enemies);
 
   useEffect(() => {
     const storedUserId = sessionStorage.getItem("userId");
@@ -80,6 +83,22 @@ export default function GameRoom() {
       setPlayers(playersList);
     });
 
+    const handleUpdateEnemies = ({
+      userId: updatedUserId,
+      enemies: updatedEnemies,
+    }: {
+      userId: string;
+      enemies: Enemies[];
+    }) => {
+      if (currentPlayer?.userId === updatedUserId) {
+        setStage((prev) =>
+          prev ? { ...prev, enemies: updatedEnemies } : prev
+        );
+      }
+    };
+
+    socket.on("update-enemies", handleUpdateEnemies);
+
     socket.on("stage-started", ({ stageId, stageName, intro, enemies }) => {
       setStage({ stageId, stageName, intro, enemies });
     });
@@ -115,9 +134,10 @@ export default function GameRoom() {
       socket.off("game-started");
       socket.off("auto-role-selected");
       socket.off("stage-started");
+      socket.off("update-enemies", handleUpdateEnemies);
     };
-  }, [userId, roomId, playerName, socket]);
-  console.log(players);
+  }, [userId, roomId, playerName]);
+  console.log(stage);
 
   const handleReady = () => {
     if (players.length <= 1) {
@@ -180,15 +200,30 @@ export default function GameRoom() {
     }
   }, [messages]);
 
-  setTimeout(() => {
+  useEffect(() => {
     if (tempMessage) {
-      setTempMessage("");
+      const timeout = setTimeout(() => {
+        setTempMessage("");
+      }, 3000);
+
+      return () => clearTimeout(timeout);
     }
-  }, 3000);
+  }, [tempMessage]);
 
   const handleSelectionRoles = (role: Role) => {
     socket.emit("player-selected-role", { roomId, userId, role });
     setHasChosenRole(true);
+  };
+
+  const handleAttackEnemy = (enemyId: string) => {
+    if (!stage || !userId) return;
+
+    console.log("Ok");
+    socket.emit("attack-enemy", {
+      roomId: roomId,
+      enemyId,
+      userId: userId,
+    });
   };
 
   return (
@@ -202,6 +237,7 @@ export default function GameRoom() {
         messages={messages}
         playerName={playerName}
         stage={stage}
+        enemies={enemies}
       />
       <BattleLogs
         countdown={countdown}
@@ -215,7 +251,10 @@ export default function GameRoom() {
         userId={userId}
         gameStarted={gameStarted}
         handleSelectionRoles={handleSelectionRoles}
+        handleAttackEnemy={handleAttackEnemy}
         hasChosenRole={hasChosenRole}
+        stage={stage}
+        enemies={enemies}
       />
       <PlayerInfo playerName={playerName} players={players} userId={userId} />
     </main>

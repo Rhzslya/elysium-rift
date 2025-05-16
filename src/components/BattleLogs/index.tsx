@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import BattleLogsChat from "../BattleLogsChat";
 import ChatForm from "../ChatForm";
 import { socket } from "@/lib/socketClient";
-import { Player, Role } from "@/utils/Type";
+import { Enemies, Player, Role, Stage } from "@/utils/Type";
+import { enemies } from "@/utils/Enemies";
 
 const BattleLogs = ({
   countdown,
@@ -15,7 +16,10 @@ const BattleLogs = ({
   tempMessage,
   gameStarted,
   handleSelectionRoles,
+  handleAttackEnemy,
   hasChosenRole,
+  stage,
+  enemies,
 }: {
   countdown: number | null;
   logs: { sender: string; message: string }[];
@@ -28,7 +32,10 @@ const BattleLogs = ({
   tempMessage: string | null;
   gameStarted: boolean;
   handleSelectionRoles: (role: Role) => void;
+  handleAttackEnemy: (enemyId: string) => void;
   hasChosenRole: boolean;
+  stage: Stage | null;
+  enemies: Enemies[];
 }) => {
   const currentPlayer = players.find((p) => p.userId === userId);
   const isReady = currentPlayer?.isReady ?? false;
@@ -59,7 +66,10 @@ const BattleLogs = ({
             availableRoles={availableRoles}
             gameStarted={gameStarted}
             handleSelectionRoles={handleSelectionRoles}
+            handleAttackEnemy={handleAttackEnemy}
             hasChosenRole={hasChosenRole}
+            stage={stage}
+            enemies={enemies}
           />
         </div>
       </div>

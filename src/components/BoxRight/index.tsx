@@ -1,20 +1,20 @@
 import React from "react";
 import ChatBox from "../ChatBox";
-import { Stage } from "@/utils/Type";
+import { Enemies, Stage } from "@/utils/Type";
 import EnemiesList from "../EnemiesList";
 
 const BoxRight = ({
   chatAreaRef,
   messages,
   playerName,
-  stage,
+  enemies,
 }: {
   chatAreaRef: React.RefObject<HTMLDivElement | null>;
   messages: { sender: string; message: string }[];
   playerName: string | null;
   stage: Stage | null;
+  enemies: Enemies[];
 }) => {
-  const enemies = stage?.enemies ?? [];
   return (
     <section className="relative msg-box min-h-screen text-white flex flex-col gap-4 items-center">
       <div className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto bg-gray-800 rounded-lg">

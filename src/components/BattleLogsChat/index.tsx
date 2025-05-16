@@ -1,4 +1,5 @@
-import { Role } from "@/utils/Type";
+import { socket } from "@/lib/socketClient";
+import { Enemies, Player, Role, Stage } from "@/utils/Type";
 import React from "react";
 
 const BattleLogsChat = ({
@@ -9,6 +10,9 @@ const BattleLogsChat = ({
   handleSelectionRoles,
   hasChosenRole,
   availableRoles,
+  stage,
+  enemies,
+  handleAttackEnemy,
 }: {
   logs: { sender: string; message: string }[];
   countdown: number | null;
@@ -17,6 +21,9 @@ const BattleLogsChat = ({
   gameStarted: boolean;
   handleSelectionRoles: (role: Role) => void;
   hasChosenRole: boolean;
+  stage: Stage | null;
+  enemies: Enemies[];
+  handleAttackEnemy: (enemyId: string) => void;
 }) => {
   return (
     <section>
@@ -79,6 +86,48 @@ const BattleLogsChat = ({
             ))}
           </div>
         )}
+        <section className="stage-section">
+          {stage && (
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-lg overflow-hidden">
+              <div className="bg-gray-800 px-6 py-4 border-b border-gray-700">
+                <h1 className="text-2xl font-bold text-amber-400 text-center tracking-wide">
+                  {stage.stageName}
+                </h1>
+              </div>
+
+              <div className="p-6">
+                <p className="text-base text-gray-300 leading-relaxed">
+                  {stage.intro}
+                </p>
+              </div>
+            </div>
+          )}
+          {enemies && enemies.length > 0 && (
+            <div className="mt-6 w-full max-w-2xl mx-auto">
+              <h2 className="text-lg font-semibold text-red-400 mb-2">
+                Choose an enemy to attack:
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {enemies.map((enemy) => (
+                  <div
+                    key={enemy.id}
+                    className="bg-gray-800 border border-gray-700 rounded-lg p-4"
+                  >
+                    <h3 className="text-md font-bold text-white">
+                      {enemy.name}
+                    </h3>
+                    <button
+                      onClick={() => handleAttackEnemy(enemy.id)}
+                      className="mt-2 bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-lg transition duration-200"
+                    >
+                      Attack
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </section>
   );

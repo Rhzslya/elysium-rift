@@ -29,6 +29,7 @@ export type Enemies = {
     defense: number;
     speed: number;
   };
+  currentHealth: number;
   passive?: string;
   skills?: string;
 };
@@ -49,4 +50,26 @@ export type Stage = {
   stageName: string;
   intro: string;
   enemies: Enemies[];
+};
+
+export type ResolvedEnemy = {
+  instanceId: string; // Unik tiap musuh dalam satu stage
+  templateId: string; // ID musuh asli (dari data template)
+  name: string;
+  stats: {
+    attack: number;
+    health: number;
+    defense: number;
+    speed: number;
+  };
+  currentHealth: number;
+  isAlive: boolean;
+  skill?: string;
+  passive?: string;
+  statusEffects: {
+    type: "buff" | "debuff";
+    stat: "attack" | "defense" | "speed";
+    amount: number;
+    duration: number; // dalam jumlah turn
+  }[];
 };
