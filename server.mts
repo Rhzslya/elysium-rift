@@ -21,7 +21,7 @@ app.prepare().then(() => {
       countdownTimer?: NodeJS.Timeout;
       autoAssignTimeout?: NodeJS.Timeout;
       gameStarted?: boolean;
-      stageNumber?: number;
+      stageNumber?: number | null;
       battleStarted?: boolean;
       playerEnemies?: {
         [socketId: string]: Enemies[];
@@ -66,7 +66,6 @@ app.prepare().then(() => {
         const baseEnemy = enemies.find((e) => e.id === id);
         if (!baseEnemy) throw new Error(`Enemy ID ${id} not found`);
 
-        // Kembalikan copy + kasih ID unik per musuh di stage
         return {
           ...JSON.parse(JSON.stringify(baseEnemy)),
           id: `${id}-${index + 1}`, // contoh: goblin-1, goblin-2
@@ -74,7 +73,7 @@ app.prepare().then(() => {
       });
     };
 
-    const startStage = (roomId: string, stageId: number) => {
+    const startStage = (roomId: string, stageId: number | null) => {
       const room = io.sockets.adapter.rooms.get(roomId);
       if (!room) return;
 
@@ -104,28 +103,46 @@ app.prepare().then(() => {
       console.log(`Stage ${stageId} started in room ${roomId}`);
     };
 
+    const resetPlayerRoles = (roomId: string) => {
+      const room = io.sockets.adapter.rooms.get(roomId);
+      if (!room) return;
+
+      for (const socketId of room) {
+        const s = io.sockets.sockets.get(socketId);
+        if (!s) continue;
+        s.data.roles = null;
+        s.data.roleSelected = false;
+
+        io.to(socketId).emit("role-selected", {
+          roomId,
+          userId: s.data.userId,
+          role: null,
+        });
+      }
+    };
+
     socket.on("check-room", (roomId, callback) => {
       const gameStarted = roomStates[roomId]?.gameStarted ?? false;
 
       if (gameStarted) {
         console.log(`Room ${roomId} already started.`);
-        callback(false, true); // Room exists but game already started
+        callback(false, true);
         return;
       }
 
       const room = io.sockets.adapter.rooms.get(roomId);
       if (room) {
         console.log(`Room ${roomId} exists.`);
-        callback(true, false); // Room exists and not started
+        callback(true, false);
       } else {
         console.log(`Room ${roomId} not found.`);
-        callback(false, false); // Room doesn't exist
+        callback(false, false);
       }
     });
 
     socket.on("join-room", ({ roomId, username, userId }) => {
       if (socket.rooms.has(roomId)) {
-        return; // sudah join, tidak perlu proses lagi
+        return;
       }
       socket.join(roomId);
       socket.data.userId = userId;
@@ -145,15 +162,35 @@ app.prepare().then(() => {
       if (roomStates[roomId]?.gameStarted) {
         clearInterval(roomStates[roomId].countdownTimer);
         roomStates[roomId].countdownTimer = undefined;
-        io.to(roomId).emit("countdown", null);
         roomStates[roomId].gameStarted = false;
-        console.log(`Player ${userId} rejoined. Resetting gameStarted.`);
+        roomStates[roomId].battleStarted = false;
+        roomStates[roomId].stageNumber = null;
+        roomStates[roomId].playerEnemies = {};
 
-        // Kirim ke semua pemain di room bahwa game dibatalkan
+        io.to(roomId).emit("countdown", null);
+
+        resetPlayerRoles(roomId);
+
+        console.log(
+          `room ${roomId} reset, gameStarted: ${
+            roomStates[roomId].gameStarted
+          } battleStarted: ${roomStates[roomId].battleStarted} stageNumber: ${
+            roomStates[roomId].stageNumber
+          } playerEnemies: ${JSON.stringify(roomStates[roomId].playerEnemies)}`
+        );
+
         io.to(roomId).emit("game-started", false);
         io.to(roomId).emit("temp-message", {
           message: `${username} Rejoined. Game has been canceled.`,
         });
+
+        const players = updatePlayersList(roomId);
+        io.to(roomId).emit("update-players", players);
+        io.to(roomId).emit("update-enemies", {
+          userId,
+          enemies: {},
+        });
+        io.to(roomId).emit("clear-stage");
       }
 
       console.log(
@@ -187,7 +224,6 @@ app.prepare().then(() => {
           };
         });
 
-        io.to(roomId).emit("update-players", players);
         console.log(
           `${username} is now ${
             isReady ? "ready" : "not ready"
@@ -484,9 +520,7 @@ app.prepare().then(() => {
     socket.on("disconnect", () => {
       const roomId = Object.keys(socket.rooms)[1];
 
-      // Cek apakah game sudah dimulai
       if (roomStates[roomId]?.gameStarted) {
-        // Jika game sudah dimulai, periksa jumlah pemain yang tersisa
         const room = io.sockets.adapter.rooms.get(roomId);
         if (room) {
           const players = Array.from(room).map((id) => {
@@ -500,7 +534,6 @@ app.prepare().then(() => {
         }
       }
 
-      // Hapus status isReady dan gameStarted dari socket yang disconnect
       socket.data.isReady = false;
       socket.data.gameStarted = false;
       console.log("User disconnected", socket.id);

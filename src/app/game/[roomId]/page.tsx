@@ -31,10 +31,11 @@ export default function GameRoom() {
     stageId: number;
     stageName: string;
     intro: string;
-    // enemies untuk stage saat ini
   } | null>(null);
   const [enemyData, setEnemyData] = useState<Enemies[]>([]);
+  console.log(stage);
   console.log(enemyData);
+  console.log(hasChosenRole);
 
   useEffect(() => {
     const storedUserId = sessionStorage.getItem("userId");
@@ -89,6 +90,12 @@ export default function GameRoom() {
     socket.on("stage-started", ({ stageId, stageName, intro, enemies }) => {
       setStage({ stageId, stageName, intro });
       setEnemyData(enemies);
+    });
+
+    socket.on("clear-stage", () => {
+      setStage(null);
+      setEnemyData([]);
+      setHasChosenRole(false);
     });
 
     socket.on("auto-role-selected", ({ userId, role, roleSelected }) => {

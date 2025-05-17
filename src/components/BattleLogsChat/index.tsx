@@ -86,8 +86,8 @@ const BattleLogsChat = ({
             ))}
           </div>
         )}
-        <section className="stage-section">
-          {stage && (
+        {stage && gameStarted && (
+          <section className="stage-section">
             <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-lg overflow-hidden">
               <div className="bg-gray-800 px-6 py-4 border-b border-gray-700">
                 <h1 className="text-2xl font-bold text-amber-400 text-center tracking-wide">
@@ -101,30 +101,33 @@ const BattleLogsChat = ({
                 </p>
               </div>
             </div>
-          )}
-          {enemyData.map((enemy) => (
-            <div
-              key={enemy.id}
-              className="bg-gray-800 border border-gray-700 rounded-lg p-4"
-            >
-              <h3 className="text-md font-bold text-white">{enemy.name}</h3>
 
-              {/* ✅ Cek jika enemy masih hidup */}
-              {enemy.isAlive ? (
-                <button
-                  onClick={() => handleAttackEnemy(enemy.id)}
-                  className="mt-2 bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-lg transition duration-200"
+            {/* Enemy cards */}
+            <div className="mt-6 grid gap-4">
+              {enemyData.map((enemy) => (
+                <div
+                  key={enemy.id}
+                  className="bg-gray-800 border border-gray-700 rounded-lg p-4"
                 >
-                  Attack
-                </button>
-              ) : (
-                <p className="mt-2 text-sm text-gray-400 italic">
-                  Enemy is defeated
-                </p>
-              )}
+                  <h3 className="text-md font-bold text-white">{enemy.name}</h3>
+
+                  {enemy.isAlive ? (
+                    <button
+                      onClick={() => handleAttackEnemy(enemy.id)}
+                      className="mt-2 bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-lg transition duration-200"
+                    >
+                      Attack
+                    </button>
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-400 italic">
+                      Enemy is defeated
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
-        </section>
+          </section>
+        )}
       </div>
     </section>
   );
