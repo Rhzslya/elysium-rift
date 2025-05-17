@@ -8,6 +8,7 @@ const port = parseInt(process.env.PORT || "3000", 10);
 import { roles } from "./src/utils/Roles/index.js";
 import { stages } from "./src/utils/Stages/index.js";
 import { Enemies } from "./src/utils/Type/index.js";
+import { enemies } from "./src/utils/Enemies/index.js";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
@@ -60,6 +61,19 @@ app.prepare().then(() => {
       return players;
     };
 
+    const getEnemiesByIds = (ids: string[]) => {
+      return ids.map((id, index) => {
+        const baseEnemy = enemies.find((e) => e.id === id);
+        if (!baseEnemy) throw new Error(`Enemy ID ${id} not found`);
+
+        // Kembalikan copy + kasih ID unik per musuh di stage
+        return {
+          ...JSON.parse(JSON.stringify(baseEnemy)),
+          id: `${id}-${index + 1}`, // contoh: goblin-1, goblin-2
+        };
+      });
+    };
+
     const startStage = (roomId: string, stageId: number) => {
       const room = io.sockets.adapter.rooms.get(roomId);
       if (!room) return;
@@ -76,7 +90,7 @@ app.prepare().then(() => {
       roomStates[roomId].playerEnemies = {};
 
       for (const socketId of room) {
-        const enemiesForPlayer = JSON.parse(JSON.stringify(stage.enemies));
+        const enemiesForPlayer = getEnemiesByIds(stage.enemies);
         roomStates[roomId].playerEnemies![socketId] = enemiesForPlayer;
 
         io.to(socketId).emit("stage-started", {
@@ -326,6 +340,12 @@ app.prepare().then(() => {
           waitingPlayers.forEach((p) => {
             const randomRole = roles[Math.floor(Math.random() * roles.length)];
 
+            const s = io.sockets.sockets.get(p.socketId);
+            if (s) {
+              s.data.roles = randomRole;
+              s.data.roleSelected = true;
+            }
+
             const playerIndex = players.findIndex(
               (pl) => pl.userId === p.userId
             );
@@ -365,7 +385,7 @@ app.prepare().then(() => {
       const players = Array.from(room).map((id) => {
         const playerSocket = io.sockets.sockets.get(id);
         return {
-          socket: playerSocket,
+          socketId: id,
           userId: playerSocket?.data.userId,
           username: playerSocket?.data.username,
           isReady: playerSocket?.data.isReady || false,
@@ -373,9 +393,11 @@ app.prepare().then(() => {
         };
       });
 
+      console.log(players);
+
       // Cari pemain yang sesuai dengan userId
       const player = players.find((p) => p.userId === userId);
-      if (!player || !player.socket) {
+      if (!player || !player.socketId) {
         console.log("Player not found or has no socket.");
         return;
       }
@@ -390,30 +412,36 @@ app.prepare().then(() => {
       }
 
       const playerEnemies = roomStates[roomId]?.playerEnemies;
-      if (!playerEnemies || !playerEnemies[userId]) {
+      if (!playerEnemies || !playerEnemies[player.socketId]) {
         console.log("❌ No enemies found for this player.");
         return;
       }
 
-      const enemies = playerEnemies[userId];
+      const enemies = playerEnemies[player.socketId];
       const enemy = enemies.find((e) => e.id === enemyId);
       if (!enemy) {
         console.log("❌ Enemy not found.");
         return;
       }
 
-      // Hitung damage dan update health musuh
-      enemy.stats.health = Math.max(enemy.stats.health - attackPower, 0);
-      playerEnemies[userId] = enemies;
+      enemy.stats.currentHealth = Math.max(
+        enemy.stats.currentHealth - attackPower,
+        0
+      );
 
-      // Emit update ke semua client di room
-      io.to(roomId).emit("update-enemies", {
+      if (enemy.stats.currentHealth === 0) {
+        enemy.isAlive = false;
+      }
+
+      playerEnemies[player.socketId] = enemies;
+
+      io.to(player.socketId).emit("update-enemies", {
         userId,
         enemies,
       });
 
       console.log(
-        `✅ Player ${userId} attacked enemy ${enemyId} for ${attackPower} damage. Remaining HP: ${enemy.stats.health}`
+        `✅ Player ${userId} attacked enemy ${enemyId} for ${attackPower} damage. Remaining HP: ${enemy.stats.currentHealth}`
       );
     });
 

@@ -19,7 +19,7 @@ const BattleLogs = ({
   handleAttackEnemy,
   hasChosenRole,
   stage,
-  enemies,
+  enemyData,
 }: {
   countdown: number | null;
   logs: { sender: string; message: string }[];
@@ -35,7 +35,7 @@ const BattleLogs = ({
   handleAttackEnemy: (enemyId: string) => void;
   hasChosenRole: boolean;
   stage: Stage | null;
-  enemies: Enemies[];
+  enemyData: Enemies[];
 }) => {
   const currentPlayer = players.find((p) => p.userId === userId);
   const isReady = currentPlayer?.isReady ?? false;
@@ -69,7 +69,7 @@ const BattleLogs = ({
             handleAttackEnemy={handleAttackEnemy}
             hasChosenRole={hasChosenRole}
             stage={stage}
-            enemies={enemies}
+            enemyData={enemyData}
           />
         </div>
       </div>

@@ -3,44 +3,7 @@ export const stages = [
     id: 1,
     name: "Stage 1",
     intro: "3 Goblins appear! Eliminate them to earn your basic skill.",
-    enemies: [
-      {
-        id: "goblin-1",
-        type: "Goblin",
-        name: "Goblin",
-        stats: {
-          attack: 5,
-          health: 40,
-          defense: 2,
-          speed: 5,
-        },
-        skill: "Quick Slash",
-      },
-      {
-        id: "goblin-2",
-        type: "Goblin",
-        name: "Goblin",
-        stats: {
-          attack: 5,
-          health: 40,
-          defense: 2,
-          speed: 5,
-        },
-        skill: "Quick Slash",
-      },
-      {
-        id: "goblin-3",
-        type: "Goblin",
-        name: "Goblin",
-        stats: {
-          attack: 5,
-          health: 40,
-          defense: 2,
-          speed: 5,
-        },
-        skill: "Quick Slash",
-      },
-    ],
+    enemies: ["goblin", "goblin", "goblin"],
     reward: {
       skills: [
         {

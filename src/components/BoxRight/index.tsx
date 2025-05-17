@@ -7,13 +7,13 @@ const BoxRight = ({
   chatAreaRef,
   messages,
   playerName,
-  enemies,
+  enemyData,
 }: {
   chatAreaRef: React.RefObject<HTMLDivElement | null>;
   messages: { sender: string; message: string }[];
   playerName: string | null;
   stage: Stage | null;
-  enemies: Enemies[];
+  enemyData: Enemies[];
 }) => {
   return (
     <section className="relative msg-box min-h-screen text-white flex flex-col gap-4 items-center">
@@ -38,7 +38,7 @@ const BoxRight = ({
           ))}
         </div>
       </div>
-      <EnemiesList enemies={enemies} />
+      <EnemiesList enemyData={enemyData} />
     </section>
   );
 };

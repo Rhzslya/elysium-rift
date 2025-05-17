@@ -25,11 +25,12 @@ export type Enemies = {
   description: string;
   stats: {
     attack: number;
-    health: number;
+    currentHealth: number;
+    maxHealth: number;
     defense: number;
     speed: number;
   };
-  currentHealth: number;
+  isAlive: boolean;
   passive?: string;
   skills?: string;
 };
@@ -49,7 +50,6 @@ export type Stage = {
   stageId: number;
   stageName: string;
   intro: string;
-  enemies: Enemies[];
 };
 
 export type ResolvedEnemy = {

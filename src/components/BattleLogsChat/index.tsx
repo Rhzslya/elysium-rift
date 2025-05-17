@@ -11,7 +11,7 @@ const BattleLogsChat = ({
   hasChosenRole,
   availableRoles,
   stage,
-  enemies,
+  enemyData,
   handleAttackEnemy,
 }: {
   logs: { sender: string; message: string }[];
@@ -22,7 +22,7 @@ const BattleLogsChat = ({
   handleSelectionRoles: (role: Role) => void;
   hasChosenRole: boolean;
   stage: Stage | null;
-  enemies: Enemies[];
+  enemyData: Enemies[];
   handleAttackEnemy: (enemyId: string) => void;
 }) => {
   return (
@@ -102,31 +102,28 @@ const BattleLogsChat = ({
               </div>
             </div>
           )}
-          {enemies && enemies.length > 0 && (
-            <div className="mt-6 w-full max-w-2xl mx-auto">
-              <h2 className="text-lg font-semibold text-red-400 mb-2">
-                Choose an enemy to attack:
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {enemies.map((enemy) => (
-                  <div
-                    key={enemy.id}
-                    className="bg-gray-800 border border-gray-700 rounded-lg p-4"
-                  >
-                    <h3 className="text-md font-bold text-white">
-                      {enemy.name}
-                    </h3>
-                    <button
-                      onClick={() => handleAttackEnemy(enemy.id)}
-                      className="mt-2 bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-lg transition duration-200"
-                    >
-                      Attack
-                    </button>
-                  </div>
-                ))}
-              </div>
+          {enemyData.map((enemy) => (
+            <div
+              key={enemy.id}
+              className="bg-gray-800 border border-gray-700 rounded-lg p-4"
+            >
+              <h3 className="text-md font-bold text-white">{enemy.name}</h3>
+
+              {/* ✅ Cek jika enemy masih hidup */}
+              {enemy.isAlive ? (
+                <button
+                  onClick={() => handleAttackEnemy(enemy.id)}
+                  className="mt-2 bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-lg transition duration-200"
+                >
+                  Attack
+                </button>
+              ) : (
+                <p className="mt-2 text-sm text-gray-400 italic">
+                  Enemy is defeated
+                </p>
+              )}
             </div>
-          )}
+          ))}
         </section>
       </div>
     </section>
