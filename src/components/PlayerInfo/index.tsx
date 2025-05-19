@@ -27,6 +27,7 @@ const PlayerInfo = ({
   userId: string | undefined;
 }) => {
   const currentPlayer = players.find((player) => player.userId === userId);
+  console.log(currentPlayer);
 
   return (
     <section className="player-list relative  min-h-screen text-white flex flex-col gap-4 items-center">
@@ -69,42 +70,93 @@ const PlayerInfo = ({
         </div>
         <div className="px-4 py-2">
           {currentPlayer ? (
-            <div className="flex flex-colrounded-md text-white">
+            <div className="text-sm text-gray-300 pb-2">
               {currentPlayer.roles ? (
-                <div className="mt-2 text-sm text-gray-300">
-                  <h2 className="text-base font-medium">
-                    {currentPlayer.roles.name}
-                  </h2>
+                (() => {
+                  const role = currentPlayer.roles;
 
-                  <ul className="mt-1 space-y-2">
-                    {["health", "attack", "defense", "speed"].map((stat) => {
-                      const value =
-                        currentPlayer.roles!.stats[
-                          stat as keyof typeof currentPlayer.roles.stats
-                        ];
-                      const color = statColors[stat];
+                  return (
+                    <>
+                      <h3 className="text-base font-medium">{role.name}</h3>
+                      <p className="text-xs italic text-gray-400 mb-1">
+                        {currentPlayer.username}
+                      </p>
 
-                      return (
-                        <li key={stat} className="text-sm capitalize">
-                          <div className="w-full bg-gray-600 rounded h-5 mt-1">
-                            <div
-                              className={`${color} h-5 rounded w-full flex items-center justify-between px-2 text-white text-xs font-medium`}
-                            >
-                              <div className="flex items-center">
-                                {statIcons[stat]}
-                              </div>
-                              <span>{value}</span>
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                      <ul className="space-y-2">
+                        {["health", "attack", "defense", "speed"].map(
+                          (stat) => {
+                            const icon = statIcons[stat];
+                            let value: number;
+                            let barWidth = "100%";
+                            let barColor = statColors[stat];
 
-                  <p className="mt-1 italic text-gray-400">
-                    Passive: {currentPlayer.roles.passive}
-                  </p>
-                </div>
+                            if (stat === "health") {
+                              const current = role.stats.currentHealth;
+                              const max = role.stats.maxHealth;
+                              value = current;
+                              const percentage = Math.max(
+                                0,
+                                Math.min(100, (current / max) * 100)
+                              );
+                              barWidth = `${percentage}%`;
+
+                              if (percentage < 30) barColor = "bg-red-600";
+                              else if (percentage < 60)
+                                barColor = "bg-yellow-500";
+                              else barColor = "bg-green-500";
+                            } else {
+                              value =
+                                role.stats[stat as keyof typeof role.stats];
+                            }
+
+                            return (
+                              <li key={stat} className="text-sm capitalize">
+                                <div className="w-full bg-gray-600 rounded h-5 mt-1 relative overflow-hidden">
+                                  <div
+                                    className={`${barColor} h-5 transition-all duration-300 ${
+                                      stat === "health" && value === 0
+                                        ? "p-0"
+                                        : "flex items-center justify-between px-2 text-white text-xs font-medium"
+                                    }`}
+                                    style={{
+                                      width:
+                                        stat === "health" ? barWidth : "100%",
+                                    }}
+                                  >
+                                    {stat === "health" && value === 0 ? null : (
+                                      <>
+                                        <div className="flex items-center">
+                                          {icon}
+                                        </div>
+                                        <span>
+                                          {stat === "health"
+                                            ? `${role.stats.currentHealth}/${role.stats.maxHealth}`
+                                            : value}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          }
+                        )}
+                      </ul>
+
+                      {role.passive && (
+                        <p className="mt-1 italic text-gray-400">
+                          Passive: {role.passive}
+                        </p>
+                      )}
+
+                      {role.skills && (
+                        <p className="mt-1 italic text-gray-400">
+                          Skill: {role.skills}
+                        </p>
+                      )}
+                    </>
+                  );
+                })()
               ) : (
                 <p className="text-sm text-gray-400 mt-2 italic">
                   No role selected

@@ -435,11 +435,10 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("attack-enemy", ({ roomId, enemyId, userId }) => {
+    socket.on("attacking-phase", ({ roomId, enemyId, userId }) => {
       const room = io.sockets.adapter.rooms.get(roomId);
       if (!room) return;
 
-      // Ambil semua pemain di room
       const players = Array.from(room).map((id) => {
         const playerSocket = io.sockets.sockets.get(id);
         return {
@@ -453,7 +452,6 @@ app.prepare().then(() => {
 
       console.log(players);
 
-      // Cari pemain yang sesuai dengan userId
       const player = players.find((p) => p.userId === userId);
       if (!player || !player.socketId) {
         console.log("Player not found or has no socket.");

@@ -4,11 +4,14 @@ export type Role = {
   description: string;
   stats: {
     attack: number;
-    health: number;
+    currentHealth: number;
+    maxHealth: number;
     defense: number;
     speed: number;
   };
-  passive: string;
+  isAlive: boolean;
+  passive?: string;
+  skills?: string;
 };
 
 export type Player = {

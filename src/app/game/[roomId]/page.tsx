@@ -211,7 +211,7 @@ export default function GameRoom() {
     if (!stage || !userId) return;
 
     console.log("Ok");
-    socket.emit("attack-enemy", {
+    socket.emit("attacking-phase", {
       roomId: roomId,
       enemyId,
       userId: userId,
