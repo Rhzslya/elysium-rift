@@ -48,6 +48,7 @@ app.prepare().then(() => {
             username: player?.data.username,
             isReady: player?.data.isReady || false,
             roles: player?.data.roles || null,
+            roleSelected: player?.data.roleSelected || false,
           };
         })
         .filter((username) => username !== undefined);
@@ -59,6 +60,45 @@ app.prepare().then(() => {
       );
 
       return players;
+    };
+
+    const clearDataAfterGameStart = (roomId: string, username: string) => {
+      clearInterval(roomStates[roomId].countdownTimer);
+      roomStates[roomId].countdownTimer = undefined;
+      roomStates[roomId].gameStarted = false;
+      roomStates[roomId].battleStarted = false;
+      roomStates[roomId].stageNumber = null;
+      roomStates[roomId].playerEnemies = {};
+
+      io.to(roomId).emit("countdown", null);
+
+      console.log(
+        `room ${roomId} reset, gameStarted: ${
+          roomStates[roomId].gameStarted
+        } battleStarted: ${roomStates[roomId].battleStarted} stageNumber: ${
+          roomStates[roomId].stageNumber
+        } playerEnemies: ${JSON.stringify(roomStates[roomId].playerEnemies)}`
+      );
+
+      io.to(roomId).emit("game-started", false);
+      io.to(roomId).emit("temp-message", {
+        message: `${username} Rejoined. Game has been canceled.`,
+      });
+
+      resetPlayerRoles(roomId);
+
+      const players = updatePlayersList(roomId);
+      console.log(
+        "Player List:",
+        players?.map((p) => ({
+          username: p.username,
+          role: p.roles || "Not selected",
+          roleSelected: p.roleSelected ?? false,
+          isReady: p.isReady,
+        }))
+      );
+      io.to(roomId).emit("update-players", players);
+      io.to(roomId).emit("clear-stage");
     };
 
     const getEnemiesByIds = (ids: string[]) => {
@@ -149,6 +189,8 @@ app.prepare().then(() => {
       socket.data.username = username;
       socket.data.isReady = false;
 
+      resetPlayerRoles(roomId);
+
       if (roomStates[roomId]?.countdownTimer) {
         clearInterval(roomStates[roomId].countdownTimer);
         roomStates[roomId].countdownTimer = undefined;
@@ -160,37 +202,7 @@ app.prepare().then(() => {
       }
 
       if (roomStates[roomId]?.gameStarted) {
-        clearInterval(roomStates[roomId].countdownTimer);
-        roomStates[roomId].countdownTimer = undefined;
-        roomStates[roomId].gameStarted = false;
-        roomStates[roomId].battleStarted = false;
-        roomStates[roomId].stageNumber = null;
-        roomStates[roomId].playerEnemies = {};
-
-        io.to(roomId).emit("countdown", null);
-
-        resetPlayerRoles(roomId);
-
-        console.log(
-          `room ${roomId} reset, gameStarted: ${
-            roomStates[roomId].gameStarted
-          } battleStarted: ${roomStates[roomId].battleStarted} stageNumber: ${
-            roomStates[roomId].stageNumber
-          } playerEnemies: ${JSON.stringify(roomStates[roomId].playerEnemies)}`
-        );
-
-        io.to(roomId).emit("game-started", false);
-        io.to(roomId).emit("temp-message", {
-          message: `${username} Rejoined. Game has been canceled.`,
-        });
-
-        const players = updatePlayersList(roomId);
-        io.to(roomId).emit("update-players", players);
-        io.to(roomId).emit("update-enemies", {
-          userId,
-          enemies: {},
-        });
-        io.to(roomId).emit("clear-stage");
+        clearDataAfterGameStart(roomId, username);
       }
 
       console.log(
@@ -198,6 +210,16 @@ app.prepare().then(() => {
       );
 
       const players = updatePlayersList(roomId);
+
+      console.log(
+        "Player List:",
+        players?.map((p) => ({
+          username: p.username,
+          role: p.roles || "Not selected",
+          roleSelected: p.roleSelected ?? false,
+          isReady: p.isReady,
+        }))
+      );
 
       socket.to(roomId).emit("update-players", players);
 
@@ -471,10 +493,7 @@ app.prepare().then(() => {
 
       playerEnemies[player.socketId] = enemies;
 
-      io.to(player.socketId).emit("update-enemies", {
-        userId,
-        enemies,
-      });
+      io.to(player.socketId).emit("update-enemies", { enemies });
 
       console.log(
         `✅ Player ${userId} attacked enemy ${enemyId} for ${attackPower} damage. Remaining HP: ${enemy.stats.currentHealth}`
@@ -497,21 +516,10 @@ app.prepare().then(() => {
       }
 
       if (roomStates[roomId]?.gameStarted) {
-        clearInterval(roomStates[roomId].countdownTimer);
-        roomStates[roomId].countdownTimer = undefined;
-        io.to(roomId).emit("countdown", null);
-        roomStates[roomId].gameStarted = false;
-        console.log(`${username} Has left. Resetting gameStarted.`);
-
-        io.to(roomId).emit("game-started", false);
-        io.to(roomId).emit("temp-message", {
-          message: `${username} has left. Game has been canceled.`,
-        });
+        clearDataAfterGameStart(roomId, username);
       }
 
-      setTimeout(() => {
-        updatePlayersList(roomId, true);
-      }, 0);
+      updatePlayersList(roomId, true);
 
       console.log(`User ${username} left room ${roomId}`);
       io.to(roomId).emit("user-left", `${username} has left room.`);
@@ -529,6 +537,7 @@ app.prepare().then(() => {
               userId: playerSocket?.data.userId,
               username: playerSocket?.data.username,
               isReady: playerSocket?.data.isReady || false,
+              roles: playerSocket?.data.roles || null,
             };
           });
         }

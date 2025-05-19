@@ -33,9 +33,6 @@ export default function GameRoom() {
     intro: string;
   } | null>(null);
   const [enemyData, setEnemyData] = useState<Enemies[]>([]);
-  console.log(stage);
-  console.log(enemyData);
-  console.log(hasChosenRole);
 
   useEffect(() => {
     const storedUserId = sessionStorage.getItem("userId");
@@ -132,7 +129,6 @@ export default function GameRoom() {
       socket.off("update-enemies");
     };
   }, [userId, roomId, playerName]);
-  console.log(players);
 
   const handleReady = () => {
     if (players.length <= 1) {
@@ -179,6 +175,7 @@ export default function GameRoom() {
 
   const handleExitRoom = () => {
     socket.emit("exit-room", roomId, playerName);
+
     router.push("/");
   };
 
@@ -220,6 +217,12 @@ export default function GameRoom() {
       userId: userId,
     });
   };
+
+  console.log(`Player List ${players.map((p) => p.username)}`);
+  console.log(`Stage Data ${stage}`);
+  console.log(`Enemy Data ${enemyData}`);
+  console.log(`Has Chosen Role ${hasChosenRole}`);
+  console.log(`Game State ${gameStarted}`);
 
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-[0.5fr_1fr_0.5fr] gap-4">
