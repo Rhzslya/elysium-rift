@@ -26,6 +26,8 @@ app.prepare().then(() => {
       playerEnemies?: {
         [socketId: string]: Enemies[];
       };
+      playerTurnDone?: Set<string>;
+      currentPhase?: "player" | "enemy";
     };
   } = {};
 
@@ -127,6 +129,8 @@ app.prepare().then(() => {
       roomStates[roomId].stageNumber = stageId;
       roomStates[roomId].battleStarted = true;
       roomStates[roomId].playerEnemies = {};
+      roomStates[roomId].playerTurnDone = new Set();
+      roomStates[roomId].currentPhase = "player";
 
       for (const socketId of room) {
         const enemiesForPlayer = getEnemiesByIds(stage.enemies);
@@ -137,6 +141,11 @@ app.prepare().then(() => {
           stageName: stage.name,
           intro: stage.intro,
           enemies: enemiesForPlayer,
+        });
+
+        io.to(roomId).emit("battle-phase-update", {
+          phase: "player",
+          message: "Your turn",
         });
       }
 
@@ -159,6 +168,61 @@ app.prepare().then(() => {
           role: null,
         });
       }
+    };
+
+    const enemyAttackPhase = (roomId: string) => {
+      const state = roomStates[roomId];
+      if (!state) return;
+
+      const room = io.sockets.adapter.rooms.get(roomId);
+      if (!room) return;
+
+      const players = Array.from(room).map((id) => {
+        const playerSocket = io.sockets.sockets.get(id);
+        return {
+          socketId: id,
+          userId: playerSocket?.data.userId,
+          username: playerSocket?.data.username,
+          isReady: playerSocket?.data.isReady || false,
+          roles: playerSocket?.data.roles || null,
+        };
+      });
+
+      players.forEach((player) => {
+        const enemies = roomStates[roomId]?.playerEnemies?.[player.socketId];
+        const playerStats = player.roles?.stats;
+        if (!enemies || !playerStats) return;
+
+        const totalDamage = enemies
+          .filter((enemy) => enemy.isAlive)
+          .reduce((sum, enemy) => sum + (enemy.stats.attack || 0), 0);
+
+        const originalHp = playerStats.currentHealth;
+        const newHp = Math.max(originalHp - totalDamage, 0);
+        playerStats.currentHealth = newHp;
+
+        console.log(
+          `🧟 Musuh menyerang ${player.username} (${player.socketId}) dengan total ${totalDamage} damage. Sisa HP: ${newHp}`
+        );
+
+        updatePlayersList(roomId);
+
+        if (newHp === 0) {
+          io.to(player.socketId).emit("player-defeated", {
+            message: "Kamu telah dikalahkan oleh musuh!",
+          });
+        }
+
+        console.log(enemies);
+      });
+
+      state.currentPhase = "player";
+      state.playerTurnDone?.clear();
+
+      io.to(roomId).emit("battle-phase-update", {
+        phase: "player",
+        message: "Your turn",
+      });
     };
 
     socket.on("check-room", (roomId, callback) => {
@@ -375,7 +439,20 @@ app.prepare().then(() => {
           });
         });
 
-        startStage(roomId, 1);
+        io.to(roomId).emit("message", {
+          message: "Stage 1 dimulai!",
+          sender: "systemBattleLogs",
+          messageId: "stage-starting",
+        });
+
+        setTimeout(() => {
+          io.to(roomId).emit("clear-message", {
+            messageId: "stage-starting",
+          });
+
+          startStage(roomId, 1);
+        }, 3000);
+
         return;
       }
 
@@ -428,7 +505,20 @@ app.prepare().then(() => {
             });
           });
 
-          startStage(roomId, 1);
+          io.to(roomId).emit("message", {
+            message: "Stage 1 dimulai!",
+            sender: "systemBattleLogs",
+            messageId: "stage-starting",
+          });
+
+          setTimeout(() => {
+            io.to(roomId).emit("clear-message", {
+              messageId: "stage-starting",
+            });
+
+            startStage(roomId, 1);
+          }, 3000);
+
           io.to(roomId).emit("update-players", players);
           delete roomStates[roomId].autoAssignTimeout;
         }, 5000);
@@ -438,6 +528,14 @@ app.prepare().then(() => {
     socket.on("attacking-phase", ({ roomId, enemyId, userId }) => {
       const room = io.sockets.adapter.rooms.get(roomId);
       if (!room) return;
+
+      const state = roomStates[roomId];
+      if (!state || !state.battleStarted) return;
+
+      if (state.currentPhase !== "player") {
+        socket.emit("error-message", "Bukan giliranmu untuk menyerang!");
+        return;
+      }
 
       const players = Array.from(room).map((id) => {
         const playerSocket = io.sockets.sockets.get(id);
@@ -450,7 +548,10 @@ app.prepare().then(() => {
         };
       });
 
-      console.log(players);
+      if (state.playerTurnDone?.has(userId)) {
+        socket.emit("error-message", "Kamu sudah menyerang di giliran ini.");
+        return;
+      }
 
       const player = players.find((p) => p.userId === userId);
       if (!player || !player.socketId) {
@@ -459,15 +560,11 @@ app.prepare().then(() => {
       }
 
       const attackPower = player.roles?.stats?.attack || 0;
-
       if (attackPower === 0) {
-        console.log(
-          "⚠️  Attack power is 0. Roles might be missing.",
-          player.roles
-        );
+        console.log("⚠️  Attack power is 0. Roles might be missing.");
       }
 
-      const playerEnemies = roomStates[roomId]?.playerEnemies;
+      const playerEnemies = state.playerEnemies;
       if (!playerEnemies || !playerEnemies[player.socketId]) {
         console.log("❌ No enemies found for this player.");
         return;
@@ -480,22 +577,44 @@ app.prepare().then(() => {
         return;
       }
 
+      // 🎯 Serang musuh
       enemy.stats.currentHealth = Math.max(
         enemy.stats.currentHealth - attackPower,
         0
       );
-
       if (enemy.stats.currentHealth === 0) {
         enemy.isAlive = false;
       }
 
       playerEnemies[player.socketId] = enemies;
-
       io.to(player.socketId).emit("update-enemies", { enemies });
 
+      state.playerTurnDone?.add(userId);
+
       console.log(
-        `✅ Player ${userId} attacked enemy ${enemyId} for ${attackPower} damage. Remaining HP: ${enemy.stats.currentHealth}`
+        `✅ Player ${userId} attacked enemy ${enemyId} for ${attackPower} damage. Remaining HP: ${
+          enemy.stats.currentHealth
+        } player status: ${state.playerTurnDone?.add(userId)}`
       );
+
+      const allPlayerUserIds = players.map((p) => p.userId);
+      const allDone = allPlayerUserIds.every((id) =>
+        state.playerTurnDone?.has(id)
+      );
+
+      if (allDone) {
+        state.currentPhase = "enemy";
+        state.playerTurnDone?.clear();
+
+        io.to(roomId).emit("battle-phase-update", {
+          phase: "enemy",
+          message: "Enemy Turn",
+        });
+
+        setTimeout(() => {
+          enemyAttackPhase(roomId);
+        }, 3000);
+      }
     });
 
     socket.on("exit-room", (roomId, username) => {

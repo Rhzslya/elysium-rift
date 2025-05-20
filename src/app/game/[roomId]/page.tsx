@@ -33,6 +33,8 @@ export default function GameRoom() {
     intro: string;
   } | null>(null);
   const [enemyData, setEnemyData] = useState<Enemies[]>([]);
+  const [attackingEnemyId, setAttackingEnemyId] = useState<string | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUserId = sessionStorage.getItem("userId");
@@ -111,6 +113,11 @@ export default function GameRoom() {
       );
 
       setHasChosenRole(true);
+    });
+
+    socket.on("battle-phase-update", ({ phase, message }) => {
+      console.log("🔄 Phase changed:", phase);
+      setNotification(message);
     });
 
     socket.on("user-left", (message) => {
@@ -253,6 +260,7 @@ export default function GameRoom() {
         hasChosenRole={hasChosenRole}
         stage={stage}
         enemyData={enemyData}
+        notification={notification}
       />
       <PlayerInfo playerName={playerName} players={players} userId={userId} />
     </main>
