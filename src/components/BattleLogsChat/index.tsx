@@ -1,5 +1,7 @@
 import React from "react";
 import { Enemies, Role, Stage } from "@/utils/Type";
+import { motion, AnimatePresence } from "framer-motion";
+import { fadeInNotification } from "@/utils/FramerMotionStyles";
 
 const RoleCard = ({
   role,
@@ -146,9 +148,66 @@ const BattleLogsChat = ({
         </div>
       )}
       {notification && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-black/70 text-green-400 px-6 py-2 rounded-full text-lg font-bold shadow-lg animate-pulse">
-          <span>{notification}</span>
-        </div>
+        <AnimatePresence>
+          <motion.div
+            key="notification"
+            className={`absolute top-6 left-1/2 transform -translate-x-1/2 z-50 
+        px-6 py-3 rounded-lg border text-lg font-semibold shadow-lg flex space-x-2 justify-center items-center
+        ${
+          notification.toLowerCase().includes("your turn")
+            ? "bg-green-700 text-green-200 border-green-400"
+            : notification.toLowerCase().includes("enemy turn")
+            ? "bg-red-800 text-red-200 border-red-500"
+            : "bg-gray-700 text-white border-gray-500"
+        }`}
+            variants={fadeInNotification(0.2)}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            {notification.toLowerCase().includes("your turn") ? (
+              <>
+                <motion.span
+                  initial={{ x: -10, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -10, opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  Your
+                </motion.span>
+                <motion.span
+                  initial={{ x: 10, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: 10, opacity: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                >
+                  Turn
+                </motion.span>
+              </>
+            ) : notification.toLowerCase().includes("enemy turn") ? (
+              <>
+                <motion.span
+                  initial={{ x: -10, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -10, opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  Enemy
+                </motion.span>
+                <motion.span
+                  initial={{ x: 10, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: 10, opacity: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                >
+                  Turn
+                </motion.span>
+              </>
+            ) : (
+              <motion.span>{notification}</motion.span>
+            )}
+          </motion.div>
+        </AnimatePresence>
       )}
     </section>
   );

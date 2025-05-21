@@ -142,12 +142,15 @@ app.prepare().then(() => {
           intro: stage.intro,
           enemies: enemiesForPlayer,
         });
+      }
 
+      setTimeout(() => {
         io.to(roomId).emit("battle-phase-update", {
           phase: "player",
           message: "Your turn",
+          duration: 2000,
         });
-      }
+      }, 500);
 
       console.log(`Stage ${stageId} started in room ${roomId}`);
     };
@@ -222,6 +225,7 @@ app.prepare().then(() => {
       io.to(roomId).emit("battle-phase-update", {
         phase: "player",
         message: "Your turn",
+        duration: 2000,
       });
     };
 
@@ -362,7 +366,7 @@ app.prepare().then(() => {
 
               io.to(roomId).emit("choose-role-phase", roles);
             }
-          }, 1000);
+          }, 2000);
 
           roomStates[roomId].countdownTimer = countdownInterval;
 
@@ -440,7 +444,7 @@ app.prepare().then(() => {
         });
 
         io.to(roomId).emit("message", {
-          message: "Stage 1 dimulai!",
+          message: "Stage 1 Begins!",
           sender: "systemBattleLogs",
           messageId: "stage-starting",
         });
@@ -609,6 +613,7 @@ app.prepare().then(() => {
         io.to(roomId).emit("battle-phase-update", {
           phase: "enemy",
           message: "Enemy Turn",
+          duration: 2000,
         });
 
         setTimeout(() => {
