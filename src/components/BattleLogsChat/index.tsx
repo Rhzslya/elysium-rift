@@ -60,7 +60,7 @@ const BattleLogsChat = ({
   stage,
   enemyData,
   handleAttackEnemy,
-  notification,
+  turnMessages,
 }: {
   logs: { sender: string; message: string }[];
   countdown: number | null;
@@ -72,7 +72,7 @@ const BattleLogsChat = ({
   stage: Stage | null;
   enemyData: Enemies[];
   handleAttackEnemy: (enemyId: string) => void;
-  notification: string | null;
+  turnMessages: string | null;
 }) => {
   return (
     <section className="relative flex flex-col justify-center items-center mb-3 text-sm px-4">
@@ -147,67 +147,18 @@ const BattleLogsChat = ({
           </div>
         </div>
       )}
-      {notification && (
-        <AnimatePresence>
-          <motion.div
-            key="notification"
-            className={`absolute top-6 left-1/2 transform -translate-x-1/2 z-50 
-        px-6 py-3 rounded-lg border text-lg font-semibold shadow-lg flex space-x-2 justify-center items-center
-        ${
-          notification.toLowerCase().includes("your turn")
-            ? "bg-green-700 text-green-200 border-green-400"
-            : notification.toLowerCase().includes("enemy turn")
-            ? "bg-red-800 text-red-200 border-red-500"
-            : "bg-gray-700 text-white border-gray-500"
-        }`}
-            variants={fadeInNotification(0.2)}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+      {turnMessages && (
+        <div className="absolute  z-50 w-full flex justify-center">
+          <div
+            className={`px-6 py-3 rounded-xl text-white text-xl font-bold tracking-wide bg-gradient-to-r ${
+              turnMessages.toLowerCase() === "your turn"
+                ? "from-green-400 via-emerald-500 to-teal-600"
+                : "from-red-500 via-pink-600 to-rose-700"
+            } shadow-lg`}
           >
-            {notification.toLowerCase().includes("your turn") ? (
-              <>
-                <motion.span
-                  initial={{ x: -10, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -10, opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  Your
-                </motion.span>
-                <motion.span
-                  initial={{ x: 10, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: 10, opacity: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                >
-                  Turn
-                </motion.span>
-              </>
-            ) : notification.toLowerCase().includes("enemy turn") ? (
-              <>
-                <motion.span
-                  initial={{ x: -10, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -10, opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  Enemy
-                </motion.span>
-                <motion.span
-                  initial={{ x: 10, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: 10, opacity: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                >
-                  Turn
-                </motion.span>
-              </>
-            ) : (
-              <motion.span>{notification}</motion.span>
-            )}
-          </motion.div>
-        </AnimatePresence>
+            {turnMessages}
+          </div>
+        </div>
       )}
     </section>
   );

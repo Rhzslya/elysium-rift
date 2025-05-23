@@ -115,6 +115,105 @@ app.prepare().then(() => {
       });
     };
 
+    const performTurnPhase = (roomId: string) => {
+      const state = roomStates[roomId];
+      if (!state) return;
+
+      const room = io.sockets.adapter.rooms.get(roomId);
+      if (!room) return;
+
+      const players = Array.from(room).map((id) => {
+        const playerSocket = io.sockets.sockets.get(id);
+        return {
+          type: "player" as const,
+          socketId: id,
+          userId: playerSocket?.data.userId,
+          username: playerSocket?.data.username,
+          isReady: playerSocket?.data.isReady || false,
+          stats: playerSocket?.data.roles?.stats || null,
+        };
+      });
+
+      const enemiesWithPlayer = players.flatMap((player) => {
+        const enemies = state.playerEnemies?.[player.socketId] || [];
+        return enemies
+          .filter((e) => e.isAlive)
+          .map((enemy) => ({
+            type: "enemy" as const,
+            enemy,
+            targetPlayer: player,
+            stats: enemy.stats,
+          }));
+      });
+
+      const actors = [
+        ...players.filter((p) => p.stats?.currentHealth > 0),
+        ...enemiesWithPlayer,
+      ].sort((a, b) => (b.stats?.speed || 0) - (a.stats?.speed || 0));
+
+      console.log(
+        "Urutan giliran berdasarkan speed:",
+        actors.map((a) => (a.type === "player" ? a.username : a.enemy.name))
+      );
+
+      let actionDelay = 0;
+
+      actors.forEach((actor) => {
+        setTimeout(async () => {
+          if (actor.type === "enemy") {
+            if (actor.targetPlayer.stats?.currentHealth > 0) {
+              const attack = actor.stats.attack || 0;
+              const defense = actor.targetPlayer.stats?.defense || 0;
+              const damage = Math.floor(attack * (100 / (100 + defense)));
+
+              const originalHp = actor.targetPlayer.stats.currentHealth || 0;
+              const newHp = Math.max(originalHp - damage, 0);
+              actor.targetPlayer.stats.currentHealth = newHp;
+
+              io.to(actor.targetPlayer.socketId).emit("update-health", {
+                currentHealth: newHp,
+              });
+
+              console.log(
+                `🧟 ${actor.enemy.name} menyerang ${actor.targetPlayer.username} untuk ${damage} damage. Sisa HP: ${newHp}`
+              );
+
+              if (newHp === 0) {
+                io.to(actor.targetPlayer.socketId).emit("player-defeated", {
+                  message: "Kamu telah dikalahkan oleh musuh!",
+                });
+              }
+
+              await updatePlayersList(roomId);
+            } else {
+              console.log(
+                `🧟 ${actor.enemy.name} mencoba menyerang ${actor.targetPlayer.username}, tapi dia sudah kalah.`
+              );
+            }
+          }
+
+          if (actor.type === "player") {
+            console.log(
+              `🔹 Giliran player ${actor.username}. Menunggu aksi player...`
+            );
+          }
+        }, actionDelay);
+
+        actionDelay += 1500;
+      });
+
+      setTimeout(() => {
+        state.currentPhase = "player";
+        state.playerTurnDone?.clear();
+
+        io.to(roomId).emit("battle-phase-update", {
+          phase: "player",
+          message: "Your Turn",
+          duration: 2000,
+        });
+      }, actionDelay + 500);
+    };
+
     const startStage = (roomId: string, stageId: number | null) => {
       const room = io.sockets.adapter.rooms.get(roomId);
       if (!room) return;
@@ -171,62 +270,6 @@ app.prepare().then(() => {
           role: null,
         });
       }
-    };
-
-    const enemyAttackPhase = (roomId: string) => {
-      const state = roomStates[roomId];
-      if (!state) return;
-
-      const room = io.sockets.adapter.rooms.get(roomId);
-      if (!room) return;
-
-      const players = Array.from(room).map((id) => {
-        const playerSocket = io.sockets.sockets.get(id);
-        return {
-          socketId: id,
-          userId: playerSocket?.data.userId,
-          username: playerSocket?.data.username,
-          isReady: playerSocket?.data.isReady || false,
-          roles: playerSocket?.data.roles || null,
-        };
-      });
-
-      players.forEach((player) => {
-        const enemies = roomStates[roomId]?.playerEnemies?.[player.socketId];
-        const playerStats = player.roles?.stats;
-        if (!enemies || !playerStats) return;
-
-        const totalDamage = enemies
-          .filter((enemy) => enemy.isAlive)
-          .reduce((sum, enemy) => sum + (enemy.stats.attack || 0), 0);
-
-        const originalHp = playerStats.currentHealth;
-        const newHp = Math.max(originalHp - totalDamage, 0);
-        playerStats.currentHealth = newHp;
-
-        console.log(
-          `🧟 Musuh menyerang ${player.username} (${player.socketId}) dengan total ${totalDamage} damage. Sisa HP: ${newHp}`
-        );
-
-        updatePlayersList(roomId);
-
-        if (newHp === 0) {
-          io.to(player.socketId).emit("player-defeated", {
-            message: "Kamu telah dikalahkan oleh musuh!",
-          });
-        }
-
-        console.log(enemies);
-      });
-
-      state.currentPhase = "player";
-      state.playerTurnDone?.clear();
-
-      io.to(roomId).emit("battle-phase-update", {
-        phase: "player",
-        message: "Your turn",
-        duration: 2000,
-      });
     };
 
     socket.on("check-room", (roomId, callback) => {
@@ -563,10 +606,20 @@ app.prepare().then(() => {
         return;
       }
 
-      const attackPower = player.roles?.stats?.attack || 0;
-      if (attackPower === 0) {
-        console.log("⚠️  Attack power is 0. Roles might be missing.");
+      // **VALIDASI HP PLAYER MASIH > 0**
+      const playerSocket = io.sockets.sockets.get(player.socketId);
+      const playerCurrentHealth =
+        playerSocket?.data.roles?.stats?.currentHealth || 0;
+
+      if (playerCurrentHealth <= 0) {
+        socket.emit(
+          "error-message",
+          "Kamu sudah kalah dan tidak bisa menyerang lagi."
+        );
+        return;
       }
+
+      const attackPower = player.roles?.stats?.attack || 0;
 
       const playerEnemies = state.playerEnemies;
       if (!playerEnemies || !playerEnemies[player.socketId]) {
@@ -581,11 +634,15 @@ app.prepare().then(() => {
         return;
       }
 
-      // 🎯 Serang musuh
+      const enemyDefend = enemy.stats.defense || 0;
+      const rawDamage = attackPower;
+      const damageTaken = Math.max(rawDamage - enemyDefend, 0);
+
       enemy.stats.currentHealth = Math.max(
-        enemy.stats.currentHealth - attackPower,
+        enemy.stats.currentHealth - damageTaken,
         0
       );
+
       if (enemy.stats.currentHealth === 0) {
         enemy.isAlive = false;
       }
@@ -596,29 +653,33 @@ app.prepare().then(() => {
       state.playerTurnDone?.add(userId);
 
       console.log(
-        `✅ Player ${userId} attacked enemy ${enemyId} for ${attackPower} damage. Remaining HP: ${
-          enemy.stats.currentHealth
-        } player status: ${state.playerTurnDone?.add(userId)}`
+        `✅ Player ${userId} attacked enemy ${enemyId} for ${rawDamage} damage (after ${enemyDefend} defend ➜ ${damageTaken}). Remaining HP: ${enemy.stats.currentHealth}`
       );
 
-      const allPlayerUserIds = players.map((p) => p.userId);
-      const allDone = allPlayerUserIds.every((id) =>
-        state.playerTurnDone?.has(id)
+      const alivePlayers = players.filter((p) => {
+        const pHealth = p.roles?.stats?.currentHealth || 0;
+        return pHealth > 0;
+      });
+
+      const allDone = alivePlayers.every((p) =>
+        state.playerTurnDone?.has(p.userId)
       );
 
       if (allDone) {
-        state.currentPhase = "enemy";
-        state.playerTurnDone?.clear();
-
-        io.to(roomId).emit("battle-phase-update", {
-          phase: "enemy",
-          message: "Enemy Turn",
-          duration: 2000,
-        });
-
         setTimeout(() => {
-          enemyAttackPhase(roomId);
-        }, 3000);
+          state.currentPhase = "enemy";
+          state.playerTurnDone?.clear();
+
+          io.to(roomId).emit("battle-phase-update", {
+            phase: "enemy",
+            message: "Enemy Turn",
+            duration: 2000,
+          });
+
+          setTimeout(() => {
+            performTurnPhase(roomId); // Panggil turn phase musuh berdasarkan speed
+          }, 3000);
+        }, 1000);
       }
     });
 
