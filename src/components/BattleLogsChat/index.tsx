@@ -1,7 +1,6 @@
 import React from "react";
 import { Enemies, Role, Stage } from "@/utils/Type";
-import { motion, AnimatePresence } from "framer-motion";
-import { fadeInNotification } from "@/utils/FramerMotionStyles";
+import { Sword } from "lucide-react";
 
 const RoleCard = ({
   role,
@@ -25,28 +24,6 @@ const RoleCard = ({
     </div>
     <p className="italic text-emerald-400 text-sm">Passive: {role.passive}</p>
   </button>
-);
-
-const EnemyCard = ({
-  enemy,
-  onAttack,
-}: {
-  enemy: Enemies;
-  onAttack: (id: string) => void;
-}) => (
-  <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-    <h3 className="text-md font-bold text-white">{enemy.name}</h3>
-    {enemy.isAlive ? (
-      <button
-        onClick={() => onAttack(enemy.id)}
-        className="mt-2 bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-lg transition duration-200"
-      >
-        Attack
-      </button>
-    ) : (
-      <p className="mt-2 text-sm text-gray-400 italic">Enemy is defeated</p>
-    )}
-  </div>
 );
 
 const BattleLogsChat = ({
@@ -74,8 +51,23 @@ const BattleLogsChat = ({
   handleAttackEnemy: (enemyId: string) => void;
   turnMessages: string | null;
 }) => {
+  const [selectedEnemyId, setSelectedEnemyId] = React.useState<string | null>(
+    null
+  );
+  const [isSelectingEnemy, setIsSelectingEnemy] = React.useState(false);
+
+  const handleSingleAttackEnemy = () => {
+    if (!selectedEnemyId) {
+      setIsSelectingEnemy(!isSelectingEnemy);
+    } else {
+      handleAttackEnemy(selectedEnemyId);
+      setSelectedEnemyId(null);
+      setIsSelectingEnemy(false);
+    }
+  };
+
   return (
-    <section className="relative flex flex-col justify-center items-center mb-3 text-sm px-4">
+    <section className="relative flex flex-col justify-center items-center text-sm px-4">
       <div className="battle-logs-chat w-full max-w-3xl space-y-2">
         {typeof countdown === "number" && countdown > 0 && (
           <div className="text-center font-semibold text-yellow-300 animate-pulse">
@@ -102,7 +94,7 @@ const BattleLogsChat = ({
           </p>
         ))}
       </div>
-      {/* Role Selection */}
+
       {!hasChosenRole && gameStarted && availableRoles?.length > 0 && (
         <div className="selection-roles mt-6 w-full max-w-4xl">
           <h1 className="text-xl font-semibold text-center text-amber-400">
@@ -119,31 +111,55 @@ const BattleLogsChat = ({
           </div>
         </div>
       )}
-      {/* Stage Info */}
       {stage && gameStarted && !tempMessage && (
-        <div className="stage-section w-full max-w-4xl mt-6 space-y-6">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-lg overflow-hidden">
-            <div className="bg-gray-800 px-6 py-4 border-b border-gray-700">
-              <h1 className="text-2xl font-bold text-amber-400 text-center tracking-wide">
-                {stage.stageName}
-              </h1>
-            </div>
-            <div className="p-6">
-              <p className="text-base text-gray-300 leading-relaxed">
-                {stage.intro}
-              </p>
-            </div>
+        <div className="stage-section w-full max-w-4xl space-y-6 border rounded-md border-gray-700">
+          <div className="px-6 py-4 ">
+            <h1 className="text-2xl font-bold text-amber-400 text-center tracking-wide">
+              {stage.stageName}
+            </h1>
+          </div>
+          <div className="flex p-6 m-0 mb-2 border-b border-gray-700">
+            <p className="text-base text-gray-300 leading-relaxed">
+              {stage.intro}
+            </p>
           </div>
 
-          {/* Enemy Cards */}
-          <div className="grid md:grid-cols-2 gap-4">
-            {enemyData.map((enemy) => (
-              <EnemyCard
-                key={enemy.id}
-                enemy={enemy}
-                onAttack={handleAttackEnemy}
-              />
-            ))}
+          <div className="relative min-w-full my-2 py-2 px-2">
+            <div className="relative flex justify-end">
+              <button
+                onClick={handleSingleAttackEnemy}
+                className={`${
+                  selectedEnemyId ? "bg-red-500" : "bg-red-400"
+                } hover:bg-red-600 cursor-pointer text-white font-semibold p-3 rounded-full flex items-center justify-center shadow-lg`}
+              >
+                <Sword className="w-6 h-6" />
+              </button>
+
+              {isSelectingEnemy && (
+                <div className="absolute top-18 right-1/2 translate-x-1/2 bg-white border border-gray-300 rounded-md shadow-lg p-1 z-10">
+                  <div className="flex  gap-1">
+                    {enemyData
+                      .filter((e) => e.isAlive)
+                      .map((enemy) => (
+                        <button
+                          key={enemy.id}
+                          onClick={() => {
+                            setSelectedEnemyId(enemy.id);
+                            setIsSelectingEnemy(false);
+                          }}
+                          className={`text-left text-sm py-1 px-2 rounded-md transition-all duration-200 font-medium ${
+                            selectedEnemyId === enemy.id
+                              ? "bg-emerald-500 text-white ring-2 ring-emerald-300"
+                              : "hover:bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {enemy.name}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -134,73 +134,57 @@ app.prepare().then(() => {
         };
       });
 
-      const enemiesWithPlayer = players.flatMap((player) => {
+      players.forEach((player) => {
         const enemies = state.playerEnemies?.[player.socketId] || [];
-        return enemies
+        let playerActionDelay = 0;
+
+        enemies
           .filter((e) => e.isAlive)
-          .map((enemy) => ({
-            type: "enemy" as const,
-            enemy,
-            targetPlayer: player,
-            stats: enemy.stats,
-          }));
-      });
+          .sort((a, b) => (b.stats.speed || 0) - (a.stats.speed || 0))
+          .forEach((enemy) => {
+            setTimeout(async () => {
+              if (player.stats?.currentHealth > 0) {
+                const attack = enemy.stats.attack || 0;
+                const defense = player.stats.defense || 0;
+                const damage = Math.floor(attack * (100 / (100 + defense)));
 
-      const actors = [
-        ...players.filter((p) => p.stats?.currentHealth > 0),
-        ...enemiesWithPlayer,
-      ].sort((a, b) => (b.stats?.speed || 0) - (a.stats?.speed || 0));
+                const originalHp = player.stats.currentHealth || 0;
+                const newHp = Math.max(originalHp - damage, 0);
+                player.stats.currentHealth = newHp;
 
-      console.log(
-        "Urutan giliran berdasarkan speed:",
-        actors.map((a) => (a.type === "player" ? a.username : a.enemy.name))
-      );
-
-      let actionDelay = 0;
-
-      actors.forEach((actor) => {
-        setTimeout(async () => {
-          if (actor.type === "enemy") {
-            if (actor.targetPlayer.stats?.currentHealth > 0) {
-              const attack = actor.stats.attack || 0;
-              const defense = actor.targetPlayer.stats?.defense || 0;
-              const damage = Math.floor(attack * (100 / (100 + defense)));
-
-              const originalHp = actor.targetPlayer.stats.currentHealth || 0;
-              const newHp = Math.max(originalHp - damage, 0);
-              actor.targetPlayer.stats.currentHealth = newHp;
-
-              io.to(actor.targetPlayer.socketId).emit("update-health", {
-                currentHealth: newHp,
-              });
-
-              console.log(
-                `🧟 ${actor.enemy.name} menyerang ${actor.targetPlayer.username} untuk ${damage} damage. Sisa HP: ${newHp}`
-              );
-
-              if (newHp === 0) {
-                io.to(actor.targetPlayer.socketId).emit("player-defeated", {
-                  message: "Kamu telah dikalahkan oleh musuh!",
+                io.to(player.socketId).emit("update-health", {
+                  currentHealth: newHp,
                 });
+
+                console.log(
+                  `🧟 ${enemy.name} menyerang ${player.username} untuk ${damage} damage. Sisa HP: ${newHp}`
+                );
+
+                if (newHp === 0) {
+                  io.to(player.socketId).emit("player-defeated", {
+                    message: "Kamu telah dikalahkan oleh musuh!",
+                  });
+                }
+
+                await updatePlayersList(roomId);
+              } else {
+                console.log(
+                  `🧟 ${enemy.name} mencoba menyerang ${player.username}, tapi dia sudah kalah.`
+                );
               }
+            }, playerActionDelay);
 
-              await updatePlayersList(roomId);
-            } else {
-              console.log(
-                `🧟 ${actor.enemy.name} mencoba menyerang ${actor.targetPlayer.username}, tapi dia sudah kalah.`
-              );
-            }
-          }
-
-          if (actor.type === "player") {
-            console.log(
-              `🔹 Giliran player ${actor.username}. Menunggu aksi player...`
-            );
-          }
-        }, actionDelay);
-
-        actionDelay += 1500;
+            playerActionDelay += 1500;
+          });
       });
+
+      const maxDelay = Math.max(
+        ...players.map((p) => {
+          const enemies =
+            state.playerEnemies?.[p.socketId]?.filter((e) => e.isAlive) || [];
+          return enemies.length * 1500;
+        })
+      );
 
       setTimeout(() => {
         state.currentPhase = "player";
@@ -211,7 +195,7 @@ app.prepare().then(() => {
           message: "Your Turn",
           duration: 2000,
         });
-      }, actionDelay + 500);
+      }, maxDelay + 500);
     };
 
     const startStage = (roomId: string, stageId: number | null) => {
@@ -595,24 +579,26 @@ app.prepare().then(() => {
         };
       });
 
-      if (state.playerTurnDone?.has(userId)) {
-        socket.emit("error-message", "Kamu sudah menyerang di giliran ini.");
-        return;
-      }
-
       const player = players.find((p) => p.userId === userId);
       if (!player || !player.socketId) {
         console.log("Player not found or has no socket.");
         return;
       }
 
-      // **VALIDASI HP PLAYER MASIH > 0**
+      if (state.playerTurnDone?.has(userId)) {
+        io.to(player.socketId).emit("player-turn", {
+          message: "Kamu sudah menyerang di giliran ini",
+          status: true,
+        });
+        return;
+      }
+
       const playerSocket = io.sockets.sockets.get(player.socketId);
       const playerCurrentHealth =
         playerSocket?.data.roles?.stats?.currentHealth || 0;
 
       if (playerCurrentHealth <= 0) {
-        socket.emit(
+        io.to(player.socketId).emit(
           "error-message",
           "Kamu sudah kalah dan tidak bisa menyerang lagi."
         );
@@ -677,7 +663,7 @@ app.prepare().then(() => {
           });
 
           setTimeout(() => {
-            performTurnPhase(roomId); // Panggil turn phase musuh berdasarkan speed
+            performTurnPhase(roomId); // Panggil turn phase musuh
           }, 3000);
         }, 1000);
       }

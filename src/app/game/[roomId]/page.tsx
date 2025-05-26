@@ -33,8 +33,8 @@ export default function GameRoom() {
     intro: string;
   } | null>(null);
   const [enemyData, setEnemyData] = useState<Enemies[]>([]);
-  const [attackingEnemyId, setAttackingEnemyId] = useState<string | null>(null);
   const [turnMessages, setTurnMessages] = useState<string | "">("");
+  const [turnStatus, setTurnStatus] = useState<boolean>(false);
 
   useEffect(() => {
     const storedUserId = sessionStorage.getItem("userId");
@@ -97,6 +97,11 @@ export default function GameRoom() {
       setHasChosenRole(false);
     });
 
+    socket.on("player-turn", ({ message, status }) => {
+      setTempMessage(message);
+      setTurnStatus(status);
+    });
+
     socket.on("auto-role-selected", ({ userId, role, roleSelected }) => {
       setPlayers((prev) =>
         prev.map((player) => {
@@ -140,8 +145,11 @@ export default function GameRoom() {
       socket.off("auto-role-selected");
       socket.off("stage-started");
       socket.off("update-enemies");
+      socket.off("player-turn");
     };
   }, [userId, roomId, playerName]);
+
+  console.log(`Turn Status ${turnStatus}`);
 
   const handleReady = () => {
     if (players.length <= 1) {
