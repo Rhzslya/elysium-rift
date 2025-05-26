@@ -5,8 +5,8 @@ export const roles = [
     description: "Warriors are the most powerful fighters in the game.",
     stats: {
       attack: 8,
-      maxHealth: 10,
-      currentHealth: 10,
+      maxHealth: 20,
+      currentHealth: 20,
       defense: 7,
       speed: 4,
     },

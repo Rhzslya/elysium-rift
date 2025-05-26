@@ -6,7 +6,7 @@ import { socket } from "../../../lib/socketClient";
 import BattleLogs from "@/components/BattleLogs";
 import BoxRight from "@/components/BoxRight";
 import PlayerInfo from "@/components/PlayerInfo";
-import { Enemies, Player, Role } from "@/utils/Type";
+import { ResolvedEnemy, Player, Role } from "@/utils/Type";
 
 export default function GameRoom() {
   const { roomId } = useParams();
@@ -32,7 +32,7 @@ export default function GameRoom() {
     stageName: string;
     intro: string;
   } | null>(null);
-  const [enemyData, setEnemyData] = useState<Enemies[]>([]);
+  const [enemyData, setEnemyData] = useState<ResolvedEnemy[]>([]);
   const [turnMessages, setTurnMessages] = useState<string | "">("");
   const [turnStatus, setTurnStatus] = useState<boolean>(false);
 

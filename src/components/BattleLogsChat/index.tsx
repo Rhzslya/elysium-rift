@@ -1,5 +1,5 @@
 import React from "react";
-import { Enemies, Role, Stage } from "@/utils/Type";
+import { ResolvedEnemy, Role, Stage } from "@/utils/Type";
 import { Sword } from "lucide-react";
 
 const RoleCard = ({
@@ -20,7 +20,7 @@ const RoleCard = ({
       <p>🗡️ Attack: {role.stats.attack}</p>
       <p>❤️ Health: {role.stats.maxHealth}</p>
       <p>🛡️ Defense: {role.stats.defense}</p>
-      <p>⚡ Speed: {role.stats.speed}</p>
+      <p>⚡ Speed: {role.stats.energy}</p>
     </div>
     <p className="italic text-emerald-400 text-sm">Passive: {role.passive}</p>
   </button>
@@ -47,7 +47,7 @@ const BattleLogsChat = ({
   handleSelectionRoles: (role: Role) => void;
   hasChosenRole: boolean;
   stage: Stage | null;
-  enemyData: Enemies[];
+  enemyData: ResolvedEnemy[];
   handleAttackEnemy: (enemyId: string) => void;
   turnMessages: string | null;
 }) => {

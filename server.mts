@@ -7,7 +7,7 @@ const hostname = process.env.HOSTNAME || "localhost";
 const port = parseInt(process.env.PORT || "3000", 10);
 import { roles } from "./src/utils/Roles/index.js";
 import { stages } from "./src/utils/Stages/index.js";
-import { Enemies } from "./src/utils/Type/index.js";
+import { EntityWithPassive, ResolvedEnemy } from "./src/utils/Type/index.js";
 import { enemies } from "./src/utils/Enemies/index.js";
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -24,7 +24,7 @@ app.prepare().then(() => {
       stageNumber?: number | null;
       battleStarted?: boolean;
       playerEnemies?: {
-        [socketId: string]: Enemies[];
+        [socketId: string]: ResolvedEnemy[];
       };
       playerTurnDone?: Set<string>;
       currentPhase?: "player" | "enemy";
@@ -131,6 +131,7 @@ app.prepare().then(() => {
           username: playerSocket?.data.username,
           isReady: playerSocket?.data.isReady || false,
           stats: playerSocket?.data.roles?.stats || null,
+          roles: playerSocket?.data.roles || null,
         };
       });
 
@@ -140,7 +141,6 @@ app.prepare().then(() => {
 
         enemies
           .filter((e) => e.isAlive)
-          .sort((a, b) => (b.stats.speed || 0) - (a.stats.speed || 0))
           .forEach((enemy) => {
             setTimeout(async () => {
               if (player.stats?.currentHealth > 0) {
@@ -165,6 +165,9 @@ app.prepare().then(() => {
                     message: "Kamu telah dikalahkan oleh musuh!",
                   });
                 }
+
+                // APPLY PASSIVE AFTER HP UPDATED
+                applyPassives(player.roles, { socket: io.to(player.socketId) });
 
                 await updatePlayersList(roomId);
               } else {
@@ -196,6 +199,35 @@ app.prepare().then(() => {
           duration: 2000,
         });
       }, maxDelay + 500);
+    };
+
+    const applyPassives = (
+      entity: EntityWithPassive,
+      context: { socket?: { emit: (event: string, data: any) => void } }
+    ) => {
+      const stats = entity.stats;
+      const passive = entity.passive;
+      if (!passive) return;
+
+      if (passive.includes("Berserk") || passive.includes("Quick Slash")) {
+        const currentHP = stats.currentHealth;
+        const maxHP = stats.maxHealth;
+        const attackBoost = 2;
+
+        if (currentHP < maxHP / 2 && !stats.bonusAttackApplied) {
+          stats.attack += attackBoost;
+          stats.bonusAttackApplied = true;
+
+          console.log(
+            `${entity.name} activated ${passive}! +${attackBoost} Attack!`
+          );
+
+          context.socket?.emit("passive-activated", {
+            passive,
+            message: `${passive} aktif! +${attackBoost} Attack!`,
+          });
+        }
+      }
     };
 
     const startStage = (roomId: string, stageId: number | null) => {
@@ -604,6 +636,9 @@ app.prepare().then(() => {
         );
         return;
       }
+
+      applyPassives(player.roles, { socket: io.to(player.socketId) });
+      updatePlayersList(roomId);
 
       const attackPower = player.roles?.stats?.attack || 0;
 

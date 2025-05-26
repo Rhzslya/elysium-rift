@@ -7,7 +7,8 @@ export type Role = {
     currentHealth: number;
     maxHealth: number;
     defense: number;
-    speed: number;
+    energy: number;
+    bonusAttackApplied: boolean;
   };
   isAlive: boolean;
   passive?: string;
@@ -21,22 +22,23 @@ export type Player = {
   roles: Role | null;
 };
 
-export type Enemies = {
-  id: string;
-  type: string;
-  name: string;
-  description: string;
-  stats: {
-    attack: number;
-    currentHealth: number;
-    maxHealth: number;
-    defense: number;
-    speed: number;
-  };
-  isAlive: boolean;
-  passive?: string;
-  skills?: string;
-};
+// export type Enemies = {
+//   id: string;
+//   type: string;
+//   name: string;
+//   description: string;
+//   stats: {
+//     attack: number;
+//     currentHealth: number;
+//     maxHealth: number;
+//     defense: number;
+//     energy: number;
+//     bonusAttackApplied: boolean;
+//   };
+//   isAlive: boolean;
+//   passive?: string;
+//   skills?: string;
+// };
 
 export type Skill = {
   role: string;
@@ -56,23 +58,28 @@ export type Stage = {
 };
 
 export type ResolvedEnemy = {
-  instanceId: string; // Unik tiap musuh dalam satu stage
-  templateId: string; // ID musuh asli (dari data template)
+  id: string;
+  templateId: string;
   name: string;
   stats: {
     attack: number;
-    health: number;
+    maxHealth: number;
+    currentHealth: number;
     defense: number;
-    speed: number;
+    energy: number;
+    bonusAttackApplied: boolean;
   };
-  currentHealth: number;
   isAlive: boolean;
   skill?: string;
   passive?: string;
   statusEffects: {
     type: "buff" | "debuff";
-    stat: "attack" | "defense" | "speed";
+    stat: "attack" | "defense" | "energy";
     amount: number;
-    duration: number; // dalam jumlah turn
+    duration: number;
   }[];
 };
+
+export type EntityType = "player" | "enemy";
+
+export type EntityWithPassive = Role | ResolvedEnemy;
