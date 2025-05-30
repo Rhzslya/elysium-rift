@@ -135,6 +135,7 @@ app.prepare().then(() => {
         };
       });
 
+      // Enemy attacks each player
       players.forEach((player) => {
         const enemies = state.playerEnemies?.[player.socketId] || [];
         let playerActionDelay = 0;
@@ -143,12 +144,14 @@ app.prepare().then(() => {
           .filter((e) => e.isAlive)
           .forEach((enemy) => {
             setTimeout(async () => {
+              applyPassives(enemy, { socket: undefined });
+
               if (player.stats?.currentHealth > 0) {
                 const attack = enemy.stats.attack || 0;
                 const defense = player.stats.defense || 0;
                 const damage = Math.floor(attack * (100 / (100 + defense)));
 
-                const originalHp = player.stats.currentHealth || 0;
+                const originalHp = player.stats.currentHealth;
                 const newHp = Math.max(originalHp - damage, 0);
                 player.stats.currentHealth = newHp;
 
@@ -166,9 +169,10 @@ app.prepare().then(() => {
                   });
                 }
 
-                // APPLY PASSIVE AFTER HP UPDATED
+                // Apply passive setelah HP di-update
                 applyPassives(player.roles, { socket: io.to(player.socketId) });
 
+                io.to(player.socketId).emit("update-enemies", { enemies });
                 await updatePlayersList(roomId);
               } else {
                 console.log(
@@ -181,6 +185,7 @@ app.prepare().then(() => {
           });
       });
 
+      // Setelah semua enemy attack selesai, kembalikan ke player phase
       const maxDelay = Math.max(
         ...players.map((p) => {
           const enemies =
@@ -207,7 +212,9 @@ app.prepare().then(() => {
     ) => {
       const stats = entity.stats;
       const passive = entity.passive;
-      if (!passive) return;
+      if (!passive) return { doubleShotTriggered: false };
+
+      let doubleShotTriggered = false;
 
       if (passive.includes("Berserk") || passive.includes("Quick Slash")) {
         const currentHP = stats.currentHealth;
@@ -228,6 +235,21 @@ app.prepare().then(() => {
           });
         }
       }
+
+      if (passive.includes("Double Shot")) {
+        const chance = Math.random();
+        if (chance < 0.9) {
+          doubleShotTriggered = true;
+          console.log(`${entity.name} triggered Double Shot!`);
+
+          context.socket?.emit("passive-activated", {
+            passive,
+            message: `${passive} aktif! Serangan ganda dilakukan!`,
+          });
+        }
+      }
+
+      return { doubleShotTriggered };
     };
 
     const startStage = (roomId: string, stageId: number | null) => {
@@ -626,10 +648,9 @@ app.prepare().then(() => {
       }
 
       const playerSocket = io.sockets.sockets.get(player.socketId);
-      const playerCurrentHealth =
-        playerSocket?.data.roles?.stats?.currentHealth || 0;
+      const playerHealth = playerSocket?.data.roles?.stats?.currentHealth || 0;
 
-      if (playerCurrentHealth <= 0) {
+      if (playerHealth <= 0) {
         io.to(player.socketId).emit(
           "error-message",
           "Kamu sudah kalah dan tidak bisa menyerang lagi."
@@ -637,7 +658,10 @@ app.prepare().then(() => {
         return;
       }
 
-      applyPassives(player.roles, { socket: io.to(player.socketId) });
+      // Trigger passives
+      const { doubleShotTriggered } = applyPassives(player.roles, {
+        socket: io.to(player.socketId),
+      });
       updatePlayersList(roomId);
 
       const attackPower = player.roles?.stats?.attack || 0;
@@ -656,32 +680,52 @@ app.prepare().then(() => {
       }
 
       const enemyDefend = enemy.stats.defense || 0;
-      const rawDamage = attackPower;
-      const damageTaken = Math.max(rawDamage - enemyDefend, 0);
 
+      // ========== HIT PERTAMA ==========
+      const firstDamage = Math.max(attackPower - enemyDefend, 0);
       enemy.stats.currentHealth = Math.max(
-        enemy.stats.currentHealth - damageTaken,
+        enemy.stats.currentHealth - firstDamage,
         0
       );
+      if (enemy.stats.currentHealth === 0) enemy.isAlive = false;
 
-      if (enemy.stats.currentHealth === 0) {
-        enemy.isAlive = false;
-      }
-
-      playerEnemies[player.socketId] = enemies;
-      io.to(player.socketId).emit("update-enemies", { enemies });
-
-      state.playerTurnDone?.add(userId);
-
-      console.log(
-        `✅ Player ${userId} attacked enemy ${enemyId} for ${rawDamage} damage (after ${enemyDefend} defend ➜ ${damageTaken}). Remaining HP: ${enemy.stats.currentHealth}`
-      );
-
-      const alivePlayers = players.filter((p) => {
-        const pHealth = p.roles?.stats?.currentHealth || 0;
-        return pHealth > 0;
+      applyPassives(enemy, {
+        socket: io.to(player.socketId),
       });
 
+      console.log(
+        `✅ Player ${userId} attacked enemy ${enemyId} for ${attackPower} damage (after ${enemyDefend} defend ➜ ${firstDamage}). Remaining HP: ${enemy.stats.currentHealth}`
+      );
+
+      // Update data musuh ke client setelah hit pertama
+      io.to(player.socketId).emit("update-enemies", { enemies });
+
+      // ========== DOUBLE SHOT ==========
+      if (doubleShotTriggered && enemy.isAlive) {
+        const secondDamage = Math.max(attackPower - enemyDefend, 0);
+        enemy.stats.currentHealth = Math.max(
+          enemy.stats.currentHealth - secondDamage,
+          0
+        );
+        if (enemy.stats.currentHealth === 0) enemy.isAlive = false;
+        applyPassives(enemy, {
+          socket: io.to(player.socketId),
+        });
+
+        console.log(
+          `🎯 Double Shot! Player ${userId} attacked enemy ${enemyId} again for ${attackPower} damage (after ${enemyDefend} defend ➜ ${secondDamage}). Remaining HP: ${enemy.stats.currentHealth}`
+        );
+
+        io.to(player.socketId).emit("update-enemies", { enemies });
+      }
+
+      // Update state player sudah menyerang
+      state.playerTurnDone?.add(userId);
+
+      // Cek apakah semua pemain sudah selesai menyerang
+      const alivePlayers = players.filter(
+        (p) => (p.roles?.stats?.currentHealth || 0) > 0
+      );
       const allDone = alivePlayers.every((p) =>
         state.playerTurnDone?.has(p.userId)
       );
@@ -698,7 +742,7 @@ app.prepare().then(() => {
           });
 
           setTimeout(() => {
-            performTurnPhase(roomId); // Panggil turn phase musuh
+            performTurnPhase(roomId);
           }, 3000);
         }, 1000);
       }

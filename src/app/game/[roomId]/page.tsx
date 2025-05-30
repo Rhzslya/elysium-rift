@@ -231,7 +231,9 @@ export default function GameRoom() {
   const handleAttackEnemy = (enemyId: string) => {
     if (!stage || !userId) return;
 
-    console.log("Ok");
+    socket.on("update-enemies", ({ enemies }) => {
+      setEnemyData(enemies);
+    });
     socket.emit("attacking-phase", {
       roomId: roomId,
       enemyId,

@@ -9,6 +9,7 @@ export const roles = [
       currentHealth: 20,
       defense: 7,
       speed: 4,
+      bonusAttackApplied: false,
     },
     passive: "Berserk: Gains +2 attack when HP drops below 50%.",
   },
@@ -30,12 +31,12 @@ export const roles = [
     name: "Archer",
     description: "Archers are the most powerful ranged fighters in the game.",
     stats: {
-      attack: 8,
+      attack: 20,
       maxHealth: 90,
       currentHealth: 90,
       defense: 7,
       speed: 4,
     },
-    passive: "Eagle Eye: 20% more critical chance on ranged attacks.",
+    passive: "Double Shot: 20% Chance to shoot twice.",
   },
 ];
