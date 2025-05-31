@@ -7,11 +7,11 @@ const ChatForm = ({
 }) => {
   const [message, setMessage] = useState("");
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // <-- PENTING!
+    e.preventDefault();
     console.log("Submitted");
     if (message.trim()) {
       onSendMessage(message);
-      setMessage(""); // <-- Ini akan clear input setelah kirim!
+      setMessage("");
     }
   };
 
@@ -19,7 +19,7 @@ const ChatForm = ({
     <form onSubmit={handleSubmit} className="flex gap-2">
       <input
         type="text"
-        value={message} // <-- Tambah ini!
+        value={message}
         onChange={(e) => setMessage(e.target.value)}
         className="flex-1 p-2 rounded bg-gray-700 outline-none"
         placeholder="Type your action..."

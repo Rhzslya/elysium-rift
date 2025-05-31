@@ -61,6 +61,7 @@ export type ResolvedEnemy = {
   id: string;
   templateId: string;
   name: string;
+  type: string;
   stats: {
     attack: number;
     maxHealth: number;

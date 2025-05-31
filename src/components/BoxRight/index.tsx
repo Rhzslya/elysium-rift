@@ -1,6 +1,6 @@
 import React from "react";
 import ChatBox from "../ChatBox";
-import { Enemies, Stage } from "@/utils/Type";
+import { ResolvedEnemy, Stage } from "@/utils/Type";
 import EnemiesList from "../EnemiesList";
 
 const BoxRight = ({
@@ -13,12 +13,17 @@ const BoxRight = ({
   messages: { sender: string; message: string }[];
   playerName: string | null;
   stage: Stage | null;
-  enemyData: Enemies[];
+  enemyData: ResolvedEnemy[];
 }) => {
+  console.log(enemyData);
   return (
     <section className="relative msg-box min-h-screen text-white flex flex-col gap-4 items-center">
-      <div className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto bg-gray-800 rounded-lg">
-        {/* Fixed title */}
+      {enemyData.length > 0 && <EnemiesList enemyData={enemyData} />}
+      <div
+        className={`flex flex-col w-full max-w-xl ${
+          enemyData.length > 0 ? "h-[242px]" : "h-[500px]"
+        } overflow-y-auto bg-gray-800 rounded-lg`}
+      >
         <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
           <h2 className="text-2xl font-semibold">Chat Box</h2>
         </div>
@@ -38,7 +43,6 @@ const BoxRight = ({
           ))}
         </div>
       </div>
-      <EnemiesList enemyData={enemyData} />
     </section>
   );
 };

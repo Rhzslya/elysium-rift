@@ -1,7 +1,7 @@
 // components/EnemiesList.tsx
 import React, { JSX } from "react";
 import { Heart, Sword, Shield, Zap } from "lucide-react";
-import type { Enemies } from "@/utils/Type";
+import { ResolvedEnemy } from "@/utils/Type";
 
 const statIcons: Record<string, JSX.Element> = {
   health: <Heart size={14} className="mr-1" />,
@@ -17,7 +17,7 @@ const statColors: Record<string, string> = {
   speed: "bg-yellow-500",
 };
 
-const EnemiesList = ({ enemyData }: { enemyData: Enemies[] }) => {
+const EnemiesList = ({ enemyData }: { enemyData: ResolvedEnemy[] }) => {
   return (
     <section className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto bg-gray-800 rounded-lg hide-scrollbar">
       <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
@@ -98,9 +98,9 @@ const EnemiesList = ({ enemyData }: { enemyData: Enemies[] }) => {
                 </p>
               )}
 
-              {enemy.skills && (
+              {enemy.skill && (
                 <p className="mt-1 italic text-gray-400">
-                  Skill: {enemy.skills}
+                  Skill: {enemy.skill}
                 </p>
               )}
             </div>

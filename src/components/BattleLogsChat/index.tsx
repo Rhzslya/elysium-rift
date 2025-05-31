@@ -1,6 +1,6 @@
 import React from "react";
 import { ResolvedEnemy, Role, Stage } from "@/utils/Type";
-import { Sword } from "lucide-react";
+import { Sword, X } from "lucide-react";
 
 const RoleCard = ({
   role,
@@ -66,6 +66,11 @@ const BattleLogsChat = ({
     }
   };
 
+  const cancelSelectionEnemy = () => {
+    setSelectedEnemyId(null);
+    setIsSelectingEnemy(false);
+  };
+
   return (
     <section className="relative flex flex-col justify-center items-center text-sm px-4">
       <div className="battle-logs-chat w-full max-w-3xl space-y-2">
@@ -124,42 +129,52 @@ const BattleLogsChat = ({
             </p>
           </div>
 
-          <div className="relative min-w-full my-2 py-2 px-2">
-            <div className="relative flex justify-end">
+          <div className="relative grid grid-cols-3 grid-rows-3 gap-2 py-2">
+            {selectedEnemyId && (
+              <div className="button-cancel col-start-3 row-start-1 flex ml-auto mr-4">
+                <button
+                  className="cursor-pointer hover:text-red-500 duration-300"
+                  onClick={cancelSelectionEnemy}
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            )}
+            <div className="button-attack row-span-2 col-start-3 row-start-2 flex justify-center items-center">
               <button
                 onClick={handleSingleAttackEnemy}
                 className={`${
                   selectedEnemyId ? "bg-red-500" : "bg-red-400"
-                } hover:bg-red-600 cursor-pointer text-white font-semibold p-3 rounded-full flex items-center justify-center shadow-lg`}
+                } relative hover:bg-red-600 cursor-pointer text-white font-semibold p-3 rounded-full flex items-center justify-center shadow-lg ml-8`}
               >
                 <Sword className="w-6 h-6" />
               </button>
-
-              {isSelectingEnemy && (
-                <div className="absolute top-18 right-1/2 translate-x-1/2 bg-white border border-gray-300 rounded-md shadow-lg p-1 z-10">
-                  <div className="flex  gap-1">
-                    {enemyData
-                      .filter((e) => e.isAlive)
-                      .map((enemy) => (
-                        <button
-                          key={enemy.id}
-                          onClick={() => {
-                            setSelectedEnemyId(enemy.id);
-                            setIsSelectingEnemy(false);
-                          }}
-                          className={`text-left text-sm py-1 px-2 rounded-md transition-all duration-200 font-medium ${
-                            selectedEnemyId === enemy.id
-                              ? "bg-emerald-500 text-white ring-2 ring-emerald-300"
-                              : "hover:bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {enemy.name}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
             </div>
+
+            {isSelectingEnemy && (
+              <div className="col-span-2 col-start-1 row-start-3 flex justify-center ml-auto">
+                <div className="flex ">
+                  {enemyData
+                    .filter((e) => e.isAlive)
+                    .map((enemy) => (
+                      <button
+                        key={enemy.id}
+                        onClick={() => {
+                          setSelectedEnemyId(enemy.id);
+                          setIsSelectingEnemy(false);
+                        }}
+                        className={`text-left cursor-pointer text-white text-sm py-1 px-2 rounded-sm transition-all duration-200 font-medium ${
+                          selectedEnemyId === enemy.id
+                            ? "bg-emerald-500 text-white ring-2 ring-emerald-300"
+                            : "hover:bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {enemy.name}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
