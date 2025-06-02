@@ -131,6 +131,12 @@ export default function GameRoom() {
       }
     });
 
+    socket.on("game-over", ({ sender, message, messageId }) => {
+      setLogs((prev) => [...prev, { sender, message, messageId }]);
+      setTurnStatus(false);
+      setStage(null);
+    });
+
     socket.on("user-left", (message) => {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
@@ -146,6 +152,7 @@ export default function GameRoom() {
       socket.off("stage-started");
       socket.off("update-enemies");
       socket.off("player-turn");
+      socket.off("game-over");
     };
   }, [userId, roomId, playerName]);
 

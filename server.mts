@@ -41,7 +41,7 @@ app.prepare().then(() => {
       const players = Array.from(room)
         .map((id) => {
           const player = io.sockets.sockets.get(id);
-          if (!player) return undefined;
+          if (!player) return null;
 
           if (resetReady) player.data.isReady = false;
 
@@ -53,7 +53,7 @@ app.prepare().then(() => {
             roleSelected: player?.data.roleSelected || false,
           };
         })
-        .filter((username) => username !== undefined);
+        .filter((username) => username !== null);
 
       io.to(roomId).emit("update-players", players);
 
@@ -110,7 +110,7 @@ app.prepare().then(() => {
 
         return {
           ...JSON.parse(JSON.stringify(baseEnemy)),
-          id: `${id}-${index + 1}`, // contoh: goblin-1, goblin-2
+          id: `${id}-${index + 1}`,
         };
       });
     };
@@ -164,7 +164,9 @@ app.prepare().then(() => {
                 );
 
                 if (newHp === 0) {
-                  io.to(player.socketId).emit("player-defeated", {
+                  io.to(player.socketId).emit("game-over", {
+                    sender: "systemBattleLogs",
+                    messageId: "game-over",
                     message: "Kamu telah dikalahkan oleh musuh!",
                   });
                 }
@@ -185,7 +187,6 @@ app.prepare().then(() => {
           });
       });
 
-      // Setelah semua enemy attack selesai, kembalikan ke player phase
       const maxDelay = Math.max(
         ...players.map((p) => {
           const enemies =

@@ -28,7 +28,6 @@ const BoxRight = ({
           <h2 className="text-2xl font-semibold">Chat Box</h2>
         </div>
 
-        {/* Scrollable chat area */}
         <div
           ref={chatAreaRef}
           className="flex-1 overflow-y-auto p-4 space-y-2 hide-scrollbar"

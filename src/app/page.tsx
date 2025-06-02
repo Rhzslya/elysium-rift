@@ -25,6 +25,12 @@ export default function Home() {
     if (!playerName.trim()) return;
     const roomId = nanoid(6);
     router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}`);
+    const userId = sessionStorage.getItem("userId");
+    socket.emit("join-room", {
+      roomId,
+      username: playerName,
+      userId,
+    });
   };
 
   const handleJoinRoom = () => {
