@@ -255,28 +255,17 @@ export default function GameRoom() {
   console.log(`Game State ${gameStarted}`);
 
   return (
-    <main className="min-h-screen text-white p-6 grid grid-cols-[0.5fr_1fr_0.5fr] gap-4">
-      <div className="title col-span-3 flex flex-col items-center">
-        <h1 className="text-3xl font-bold text-amber-400 mb-4">Elysium Rift</h1>
-        <p className="text-sm mb-6">Room: {roomId}</p>
-      </div>
-      <BoxRight
-        chatAreaRef={chatAreaRef}
-        messages={messages}
-        playerName={playerName}
-        stage={stage}
-        enemyData={enemyData}
-      />
+    <main className="min-h-screen text-white p-6 grid grid-cols-3 grid-rows-4 gap-2">
       <BattleLogs
         countdown={countdown}
         logs={logs}
-        tempMessage={tempMessage}
         handleReady={handleReady}
         handleExitRoom={handleExitRoom}
         handleSendMessage={handleSendMessage}
         players={players}
         setPlayers={setPlayers}
         userId={userId}
+        tempMessage={tempMessage}
         gameStarted={gameStarted}
         handleSelectionRoles={handleSelectionRoles}
         handleAttackEnemy={handleAttackEnemy}
@@ -285,7 +274,12 @@ export default function GameRoom() {
         enemyData={enemyData}
         turnMessages={turnMessages}
       />
-      <PlayerInfo playerName={playerName} players={players} userId={userId} />
+      <div className="col-start-2 row-start-1">Title</div>
+      <div className="col-start-1 row-start-4">Chat Box</div>
+      <div className="row-span-3 col-start-1 row-start-1">Enemy Status</div>
+      <div className="col-start-3 row-start-1">Player List</div>
+      <div className="row-span-2 col-start-3 row-start-2">Player Status</div>
+      <div className="col-start-3 row-start-4">Skill Button</div>
     </main>
   );
 }

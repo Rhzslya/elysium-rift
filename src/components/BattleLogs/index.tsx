@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import BattleLogsChat from "../BattleLogsChat";
 import ChatForm from "../ChatForm";
 import { socket } from "@/lib/socketClient";
-import { Enemies, Player, Role, Stage } from "@/utils/Type";
-import { enemies } from "@/utils/Enemies";
+import { ResolvedEnemy, Player, Role, Stage } from "@/utils/Type";
 
 const BattleLogs = ({
   countdown,
@@ -36,7 +35,7 @@ const BattleLogs = ({
   handleAttackEnemy: (enemyId: string) => void;
   hasChosenRole: boolean;
   stage: Stage | null;
-  enemyData: Enemies[];
+  enemyData: ResolvedEnemy[];
   turnMessages: string | null;
 }) => {
   const currentPlayer = players.find((p) => p.userId === userId);
@@ -54,8 +53,8 @@ const BattleLogs = ({
   }, [gameStarted]);
 
   return (
-    <section className="battle-logs relative  min-h-screen text-white flex flex-col items-center">
-      <div className="flex flex-col w-full max-w-xl h-[500px] overflow-y-auto bg-gray-800 rounded-lg">
+    <section className="battle-logs relative w-fulltext-white flex flex-col items-center row-span-3 col-start-2 row-start-2">
+      <div className="flex flex-col w-full max-w-[800px] h-[600px] overflow-y-auto bg-gray-800 rounded-lg">
         <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
           <h2 className="text-2xl font-semibold">Battle Logs</h2>
         </div>

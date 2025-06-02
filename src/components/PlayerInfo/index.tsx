@@ -31,9 +31,9 @@ const PlayerInfo = ({
 
   return (
     <section className="player-list relative  min-h-screen text-white flex flex-col gap-4 items-center">
-      <div className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto bg-gray-800 rounded-lg">
-        <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
-          <h2 className="text-2xl font-semibold">Player List</h2>
+      <div className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto  rounded-lg">
+        <div className="sticky top-0 z-10 py-2">
+          <h2 className="text-2xl text-right font-semibold">Player List</h2>
         </div>
         <div className="flex justify-between items-center text-xs">
           <ul className="space-y-1 w-full">
@@ -86,7 +86,7 @@ const PlayerInfo = ({
                         {["health", "attack", "defense", "speed"].map(
                           (stat) => {
                             const icon = statIcons[stat];
-                            let value: number;
+                            let value: number | boolean;
                             let barWidth = "100%";
                             let barColor = statColors[stat];
 
