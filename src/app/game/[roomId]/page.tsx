@@ -7,6 +7,7 @@ import BattleLogs from "@/components/BattleLogs";
 import BoxRight from "@/components/BoxRight";
 import PlayerInfo from "@/components/PlayerInfo";
 import { ResolvedEnemy, Player, Role } from "@/utils/Type";
+import TitleRoom from "@/components/TitleRoom";
 
 export default function GameRoom() {
   const { roomId } = useParams();
@@ -255,7 +256,8 @@ export default function GameRoom() {
   console.log(`Game State ${gameStarted}`);
 
   return (
-    <main className="min-h-screen text-white p-6 grid grid-cols-3 grid-rows-4 gap-2">
+    <main className="min-h-screen text-white p-6 grid grid-cols-3 grid-rows-[0.5fr_1fr_1fr_1fr_1fr] gap-2">
+      <TitleRoom roomId={Array.isArray(roomId) ? roomId[0] : roomId} />
       <BattleLogs
         countdown={countdown}
         logs={logs}
@@ -274,10 +276,26 @@ export default function GameRoom() {
         enemyData={enemyData}
         turnMessages={turnMessages}
       />
-      <div className="col-start-2 row-start-1">Title</div>
       <div className="col-start-1 row-start-4">Chat Box</div>
       <div className="row-span-3 col-start-1 row-start-1">Enemy Status</div>
-      <div className="col-start-3 row-start-1">Player List</div>
+      <div className="player-list col-start-3 row-start-1 flex flex-col items-end">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Player List</h2>
+        </div>
+        <div className="flex flex-col items-end text-sm space-y-1">
+          {players.map((player, index) => (
+            <span
+              key={index}
+              className={`${
+                player.isReady ? "text-green-400" : "text-gray-500"
+              }`}
+            >
+              {player.username}
+            </span>
+          ))}
+        </div>
+      </div>
+
       <div className="row-span-2 col-start-3 row-start-2">Player Status</div>
       <div className="col-start-3 row-start-4">Skill Button</div>
     </main>
