@@ -8,6 +8,7 @@ import BoxRight from "@/components/BoxRight";
 import PlayerInfo from "@/components/PlayerInfo";
 import { ResolvedEnemy, Player, Role } from "@/utils/Type";
 import TitleRoom from "@/components/TitleRoom";
+import ChatBox from "@/components/ChatBox";
 
 export default function GameRoom() {
   const { roomId } = useParams();
@@ -254,9 +255,10 @@ export default function GameRoom() {
   console.log(`Enemy Data ${enemyData}`);
   console.log(`Has Chosen Role ${hasChosenRole}`);
   console.log(`Game State ${gameStarted}`);
+  console.log(messages);
 
   return (
-    <main className="min-h-screen text-white p-6 grid grid-cols-3 grid-rows-[0.5fr_1fr_1fr_1fr_1fr] gap-2">
+    <main className="min-h-screen text-white p-6 grid grid-cols-3 grid-rows-[0.5fr_1fr_1fr_auto] gap-2">
       <TitleRoom roomId={Array.isArray(roomId) ? roomId[0] : roomId} />
       <BattleLogs
         countdown={countdown}
@@ -276,7 +278,20 @@ export default function GameRoom() {
         enemyData={enemyData}
         turnMessages={turnMessages}
       />
-      <div className="col-start-1 row-start-4">Chat Box</div>
+
+      <div
+        ref={chatAreaRef}
+        className="col-start-1 row-start-4 h-[200px] flex-1 overflow-y-auto p-4 space-y-2 hide-scrollbar"
+      >
+        {messages.map((msg, index) => (
+          <ChatBox
+            key={index}
+            sender={msg.sender === playerName ? "You" : msg.sender}
+            message={msg.message}
+            isOwnMessage={msg.sender === playerName}
+          />
+        ))}
+      </div>
       <div className="row-span-3 col-start-1 row-start-1">Enemy Status</div>
       <div className="player-list col-start-3 row-start-1 flex flex-col items-end">
         <div>
@@ -295,7 +310,6 @@ export default function GameRoom() {
           ))}
         </div>
       </div>
-
       <div className="row-span-2 col-start-3 row-start-2">Player Status</div>
       <div className="col-start-3 row-start-4">Skill Button</div>
     </main>
