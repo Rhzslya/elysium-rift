@@ -9,6 +9,7 @@ import PlayerInfo from "@/components/PlayerInfo";
 import { ResolvedEnemy, Player, Role } from "@/utils/Type";
 import TitleRoom from "@/components/TitleRoom";
 import ChatBox from "@/components/ChatBox";
+import EnemiesList from "@/components/EnemiesList";
 
 export default function GameRoom() {
   const { roomId } = useParams();
@@ -292,7 +293,7 @@ export default function GameRoom() {
           />
         ))}
       </div>
-      <div className="row-span-3 col-start-1 row-start-1">Enemy Status</div>
+      <EnemiesList enemyData={enemyData} />
       <div className="player-list col-start-3 row-start-1 flex flex-col items-end">
         <div>
           <h2 className="text-lg font-semibold text-white">Player List</h2>

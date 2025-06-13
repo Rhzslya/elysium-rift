@@ -1,5 +1,6 @@
 "use client";
 
+import { capitalizeFirst } from "@/utils/Capitalize";
 import React, { useState } from "react";
 
 interface ChatBoxProps {
@@ -15,15 +16,19 @@ const ChatBox = ({ sender, message, isOwnMessage }: ChatBoxProps) => {
     <section className="">
       <div className={`flex text-sm`}>
         <div
-          className={`max-w-xs min-w-[120px] px-2 rounded-md ${
+          className={`max-w-[90%] sm:max-w-[70%] min-w-[120px] px-2 rounded-md ${
             isSystemMessage
               ? "text-amber-400"
               : isOwnMessage
-              ? "text-sky-400"
-              : "text-red-400"
+              ? "text-sky-300"
+              : "text-red-300"
           }`}
         >
-          <p className="text-sm text-wrap">{`${sender} : ${message}`}</p>
+          <p className="text-sm break-all whitespace-pre-wrap">
+            {`${
+              sender === "system" ? capitalizeFirst(sender) : sender
+            } : ${message}`}
+          </p>
         </div>
       </div>
     </section>

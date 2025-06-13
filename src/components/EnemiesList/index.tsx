@@ -19,13 +19,13 @@ const statColors: Record<string, string> = {
 
 const EnemiesList = ({ enemyData }: { enemyData: ResolvedEnemy[] }) => {
   return (
-    <section className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto bg-gray-800 rounded-lg hide-scrollbar">
-      <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
+    <section className="h-full col-start-1 row-start-2 overflow-y-auto  rounded-lg hide-scrollbar">
+      <div className="sticky top-0 z-10 px-4 py-2">
         <h2 className="text-2xl font-semibold text-red-400">Enemies Status</h2>
       </div>
 
       <div className="px-4 py-2 space-y-4">
-        {enemyData.length > 0 ? (
+        {enemyData.length > 0 &&
           enemyData.map((enemy) => (
             <div key={enemy.id} className="text-sm text-gray-300 pb-2">
               <h3 className="text-base font-medium">{enemy.type}</h3>
@@ -104,10 +104,7 @@ const EnemiesList = ({ enemyData }: { enemyData: ResolvedEnemy[] }) => {
                 </p>
               )}
             </div>
-          ))
-        ) : (
-          <p className="text-sm text-gray-400 mt-2 italic">No enemies found</p>
-        )}
+          ))}
       </div>
     </section>
   );
