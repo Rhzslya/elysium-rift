@@ -169,6 +169,8 @@ app.prepare().then(() => {
                     messageId: "game-over",
                     message: "Kamu telah dikalahkan oleh musuh!",
                   });
+
+                  stages
                 }
 
                 // Apply passive setelah HP di-update

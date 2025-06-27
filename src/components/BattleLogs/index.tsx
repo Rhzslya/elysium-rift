@@ -11,6 +11,7 @@ const BattleLogs = ({
   handleExitRoom,
   handleSendMessage,
   players,
+  setPlayers,
   userId,
   tempMessage,
   gameStarted,
