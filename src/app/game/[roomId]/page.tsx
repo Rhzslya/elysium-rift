@@ -311,7 +311,8 @@ export default function GameRoom() {
           ))}
         </div>
       </div>
-      <div className="row-span-2 col-start-3 row-start-2">Player Status</div>
+      <div className="">Player Status</div>
+      <PlayerInfo playerName={playerName} players={players} userId={userId} />
       <div className="col-start-3 row-start-4">Skill Button</div>
     </main>
   );

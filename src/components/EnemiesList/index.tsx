@@ -10,13 +10,6 @@ const statIcons: Record<string, JSX.Element> = {
   speed: <Zap size={14} className="mr-1" />,
 };
 
-const statColors: Record<string, string> = {
-  health: "bg-green-300",
-  attack: "bg-red-300",
-  defense: "bg-blue-300",
-  speed: "bg-yellow-300",
-};
-
 const dummyEnemyData = [
   {
     id: 1,
@@ -149,15 +142,27 @@ const EnemiesList = ({ enemyData }: { enemyData: ResolvedEnemy[] }) => {
               </ul>
 
               {enemy.passive && (
-                <p className="mt-1 italic text-gray-400">
-                  Passive: {enemy.passive}
-                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="w-[98px] text-left text-gray-300">
+                    Passive
+                  </span>
+                  <span className="pr-1">:</span>
+                  <span className="italic text-gray-400 flex-1">
+                    {enemy.passive}
+                  </span>
+                </div>
               )}
 
               {enemy.skill && (
-                <p className="mt-1 italic text-gray-400">
-                  Skill: {enemy.skill}
-                </p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="w-[98px] text-left text-gray-300">
+                    Skill
+                  </span>
+                  <span className="pr-1">:</span>
+                  <span className="italic text-gray-400 flex-1">
+                    {enemy.skill}
+                  </span>
+                </div>
               )}
             </div>
           ))}

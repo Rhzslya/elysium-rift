@@ -30,143 +30,111 @@ const PlayerInfo = ({
   console.log(currentPlayer);
 
   return (
-    <section className="player-list relative  min-h-screen text-white flex flex-col gap-4 items-center">
-      <div className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto  rounded-lg">
-        <div className="sticky top-0 z-10 py-2">
-          <h2 className="text-2xl text-right font-semibold">Player List</h2>
-        </div>
-        <div className="flex justify-between items-center text-xs">
-          <ul className="space-y-1 w-full">
-            {players.map((player, index) => (
-              <li
-                key={index}
-                className={`flex justify-between items-center text-base px-2 py-1 rounded
-      ${
-        player.username === playerName
-          ? "text-amber-400 font-bold"
-          : "text-white"
-      }`}
-              >
-                <span>
-                  {index + 1}. {player.username}
-                </span>
-                {player.isReady ? (
-                  <span className="text-green-400 text-sm font-semibold ml-2">
-                    (Ready)
-                  </span>
-                ) : (
-                  <span className="text-red-400 text-sm font-semibold ml-2">
-                    (Not Ready)
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+    <section className="h-full relative max-h-[600px] row-span-2 col-start-3 row-start-2 overflow-y-auto rounded-lg hide-scrollbar">
+      <div className=" w-full flex justify-center top-0 px-4 py-2">
+        <h2 className="text-2xl font-semibold text-green-400">Your Status</h2>
       </div>
-      <div className="flex flex-col w-full max-w-xl h-[242px] overflow-y-auto bg-gray-800 rounded-lg hide-scrollbar">
-        <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
-          <h2 className="text-2xl font-semibold text-white">Your Status</h2>
-        </div>
-        <div className="px-4 py-2">
-          {currentPlayer ? (
-            <div className="text-sm text-gray-300 pb-2">
-              {currentPlayer.roles ? (
-                (() => {
-                  const role = currentPlayer.roles;
 
-                  return (
-                    <>
-                      <h3 className="text-base font-medium">{role.name}</h3>
-                      <p className="text-xs italic text-gray-400 mb-1">
-                        {currentPlayer.username}
-                      </p>
+      <div className="px-4 py-2 space-y-4">
+        {currentPlayer ? (
+          <div className="text-sm text-gray-300 pb-2">
+            {currentPlayer.roles ? (
+              (() => {
+                const role = currentPlayer.roles;
 
-                      <ul className="space-y-2">
-                        {["health", "attack", "defense", "speed"].map(
-                          (stat) => {
-                            const icon = statIcons[stat];
-                            let value: number | boolean;
-                            let barWidth = "100%";
-                            let barColor = statColors[stat];
+                const current = role.stats.currentHealth;
+                const max = role.stats.maxHealth;
+                const percentage = Math.max(
+                  0,
+                  Math.min(100, (current / max) * 100)
+                );
+                let barColor = "bg-green-500";
+                if (percentage < 30) barColor = "bg-red-600";
+                else if (percentage < 60) barColor = "bg-yellow-500";
 
-                            if (stat === "health") {
-                              const current = role.stats.currentHealth;
-                              const max = role.stats.maxHealth;
-                              value = current;
-                              const percentage = Math.max(
-                                0,
-                                Math.min(100, (current / max) * 100)
-                              );
-                              barWidth = `${percentage}%`;
+                return (
+                  <>
+                    <h3 className="text-base font-medium">{role.name}</h3>
+                    <p className="text-xs italic text-gray-400 mb-1">
+                      {currentPlayer.username}
+                    </p>
 
-                              if (percentage < 30) barColor = "bg-red-600";
-                              else if (percentage < 60)
-                                barColor = "bg-yellow-500";
-                              else barColor = "bg-green-500";
-                            } else {
-                              value =
-                                role.stats[stat as keyof typeof role.stats];
-                            }
+                    {/* Health Bar */}
+                    <div className="mb-2">
+                      <div className="w-full bg-gray-600 rounded h-5 relative overflow-hidden">
+                        <div
+                          className={`${barColor} h-5 transition-all duration-300 flex items-center justify-between px-2 text-white text-xs font-medium`}
+                          style={{ width: `${percentage}%` }}
+                        >
+                          <div className="flex items-center">
+                            {statIcons.health}
+                          </div>
+                          <span>{`${current}/${max}`}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                            return (
-                              <li key={stat} className="text-sm capitalize">
-                                <div className="w-full bg-gray-600 rounded h-5 mt-1 relative overflow-hidden">
-                                  <div
-                                    className={`${barColor} h-5 transition-all duration-300 ${
-                                      stat === "health" && value === 0
-                                        ? "p-0"
-                                        : "flex items-center justify-between px-2 text-white text-xs font-medium"
-                                    }`}
-                                    style={{
-                                      width:
-                                        stat === "health" ? barWidth : "100%",
-                                    }}
-                                  >
-                                    {stat === "health" && value === 0 ? null : (
-                                      <>
-                                        <div className="flex items-center">
-                                          {icon}
-                                        </div>
-                                        <span>
-                                          {stat === "health"
-                                            ? `${role.stats.currentHealth}/${role.stats.maxHealth}`
-                                            : value}
-                                        </span>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              </li>
-                            );
-                          }
-                        )}
-                      </ul>
+                    {/* Other Stats */}
+                    <ul className="space-y-1 mt-1">
+                      {["attack", "defense", "speed"].map((stat) => {
+                        const icon = statIcons[stat as keyof typeof statIcons];
+                        const value = role.stats[
+                          stat as keyof typeof role.stats
+                        ] as number;
+                        return (
+                          <li
+                            key={stat}
+                            className="flex items-center gap-2 text-sm capitalize"
+                          >
+                            <div>{icon}</div>
+                            <div className="flex flex-1 items-baseline">
+                              <span className="w-20 text-left text-gray-300">
+                                {stat}
+                              </span>
+                              <span className="pr-2">:</span>
+                              <span className="font-medium">{value}</span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
 
-                      {role.passive && (
-                        <p className="mt-1 italic text-gray-400">
-                          Passive: {role.passive}
-                        </p>
-                      )}
+                    {/* Passive and Skill */}
+                    {role.passive && (
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="w-[98px] text-left text-gray-300">
+                          Passive
+                        </span>
+                        <span className="pr-1">:</span>
+                        <span className="italic text-gray-400 flex-1">
+                          {role.passive}
+                        </span>
+                      </div>
+                    )}
 
-                      {role.skills && (
-                        <p className="mt-1 italic text-gray-400">
-                          Skill: {role.skills}
-                        </p>
-                      )}
-                    </>
-                  );
-                })()
-              ) : (
-                <p className="text-sm text-gray-400 mt-2 italic">
-                  No role selected
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-gray-400">You are not in the player list.</p>
-          )}
-        </div>
+                    {role.skills && (
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="w-[98px] text-left text-gray-300">
+                          Skill
+                        </span>
+                        <span className="pr-1">:</span>
+                        <span className="italic text-gray-400 flex-1">
+                          {role.skills}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()
+            ) : (
+              <p className="text-sm text-gray-400 mt-2 italic">
+                No role selected
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-gray-400">You are not in the player list.</p>
+        )}
       </div>
     </section>
   );
