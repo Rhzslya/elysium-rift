@@ -16,7 +16,7 @@ const ChatBox = ({ sender, message, isOwnMessage }: ChatBoxProps) => {
     <section className="">
       <div className={`flex text-sm`}>
         <div
-          className={`max-w-[90%] sm:max-w-[70%] min-w-[120px] px-2 rounded-md ${
+          className={`max-w-[90%] sm:max-w-[70%] min-w-[120px] rounded-md ${
             isSystemMessage
               ? "text-amber-400"
               : isOwnMessage

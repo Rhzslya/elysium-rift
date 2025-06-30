@@ -11,10 +11,10 @@ const statIcons: Record<string, JSX.Element> = {
 };
 
 const statColors: Record<string, string> = {
-  health: "bg-green-500",
-  attack: "bg-red-500",
-  defense: "bg-blue-500",
-  speed: "bg-yellow-500",
+  health: "bg-green-300",
+  attack: "bg-red-300",
+  defense: "bg-blue-300",
+  speed: "bg-yellow-300",
 };
 
 const dummyEnemyData = [
@@ -46,14 +46,42 @@ const dummyEnemyData = [
     passive: "Takes less damage from physical attacks",
     skill: "Ground Slam",
   },
+  {
+    id: 3,
+    type: "Orc",
+    name: "Throgg",
+    stats: {
+      currentHealth: 60,
+      maxHealth: 80,
+      attack: 25,
+      defense: 20,
+      speed: 10,
+    },
+    passive: "Takes less damage from physical attacks",
+    skill: "Ground Slam",
+  },
+  {
+    id: 4,
+    type: "Orc",
+    name: "Throgg",
+    stats: {
+      currentHealth: 60,
+      maxHealth: 80,
+      attack: 25,
+      defense: 20,
+      speed: 10,
+    },
+    passive: "Takes less damage from physical attacks",
+    skill: "Ground Slam",
+  },
 ];
 
 const EnemiesList = ({ enemyData }: { enemyData: ResolvedEnemy[] }) => {
   const enemyDummyData = dummyEnemyData;
 
   return (
-    <section className="h-full col-start-1 row-start-2 row-span-2 overflow-y-auto  rounded-lg hide-scrollbar">
-      <div className="sticky top-0 z-10 px-4 py-2">
+    <section className="h-full relative max-h-[600px] col-start-1 row-start-2 row-span-2 overflow-y-auto  rounded-lg hide-scrollbar">
+      <div className=" w-full flex justify-center top-0 px-4 py-2">
         <h2 className="text-2xl font-semibold text-red-400">Enemies Status</h2>
       </div>
 
@@ -64,59 +92,56 @@ const EnemiesList = ({ enemyData }: { enemyData: ResolvedEnemy[] }) => {
               <h3 className="text-base font-medium">{enemy.type}</h3>
               <p className="text-xs italic text-gray-400 mb-1">{enemy.name}</p>
 
-              <ul className="space-y-2">
-                {["health", "attack", "defense", "speed"].map((stat) => {
-                  const icon = statIcons[stat];
-                  let value: number;
-                  let barWidth = "100%";
-                  let barColor = statColors[stat];
-
-                  if (stat === "health") {
+              {/* HEALTH BAR */}
+              <div className="mb-2">
+                <div className="w-full bg-gray-600 rounded h-5 relative overflow-hidden">
+                  {(() => {
                     const current = enemy.stats.currentHealth;
                     const max = enemy.stats.maxHealth;
-                    value = current;
                     const percentage = Math.max(
                       0,
                       Math.min(100, (current / max) * 100)
                     );
-                    barWidth = `${percentage}%`;
+                    let barColor = "bg-green-500";
                     if (percentage < 30) {
                       barColor = "bg-red-600";
                     } else if (percentage < 60) {
                       barColor = "bg-yellow-500";
-                    } else {
-                      barColor = "bg-green-500";
                     }
-                  } else {
-                    value = enemy.stats[
-                      stat as keyof typeof enemy.stats
-                    ] as number;
-                  }
-
-                  return (
-                    <li key={stat} className="text-sm capitalize">
-                      <div className="w-full bg-gray-600 rounded h-5 mt-1 relative overflow-hidden">
-                        <div
-                          className={`${barColor} h-5 transition-all duration-300 ${
-                            stat === "health" && value === 0
-                              ? "p-0"
-                              : "flex items-center justify-between px-2 text-white text-xs font-medium"
-                          }`}
-                          style={{
-                            width: stat === "health" ? barWidth : "100%",
-                          }}
-                        >
-                          {stat === "health" && value === 0 ? null : (
-                            <>
-                              <div className="flex items-center">{icon}</div>
-                              <span>
-                                {stat === "health"
-                                  ? `${enemy.stats.currentHealth}/${enemy.stats.maxHealth}`
-                                  : value}
-                              </span>
-                            </>
-                          )}
+                    return (
+                      <div
+                        className={`${barColor} h-5 transition-all duration-300 flex items-center justify-between px-2 text-white text-xs font-medium`}
+                        style={{ width: `${percentage}%` }}
+                      >
+                        <div className="flex items-center">
+                          {statIcons.health}
                         </div>
+                        <span>{`${current}/${max}`}</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* OTHER STATS AS TEXT */}
+              <ul className="space-y-1 mt-1">
+                {["attack", "defense", "speed"].map((stat) => {
+                  const icon = statIcons[stat as keyof typeof statIcons];
+                  const value = enemy.stats[
+                    stat as keyof typeof enemy.stats
+                  ] as number;
+                  return (
+                    <li
+                      key={stat}
+                      className="flex items-center gap-2 text-sm capitalize"
+                    >
+                      <div>{icon}</div>
+                      <div className="flex flex-1 items-baseline">
+                        <span className="w-20 text-left text-gray-300">
+                          {stat}
+                        </span>
+                        <span className="pr-2">:</span>
+                        <span className="font-medium">{value}</span>
                       </div>
                     </li>
                   );
@@ -137,6 +162,7 @@ const EnemiesList = ({ enemyData }: { enemyData: ResolvedEnemy[] }) => {
             </div>
           ))}
       </div>
+
       <div className="px-4 py-2 space-y-4">
         {enemyDummyData.length > 0 &&
           enemyDummyData.map((enemy) => (
@@ -144,59 +170,56 @@ const EnemiesList = ({ enemyData }: { enemyData: ResolvedEnemy[] }) => {
               <h3 className="text-base font-medium">{enemy.type}</h3>
               <p className="text-xs italic text-gray-400 mb-1">{enemy.name}</p>
 
-              <ul className="space-y-2">
-                {["health", "attack", "defense", "speed"].map((stat) => {
-                  const icon = statIcons[stat as keyof typeof statIcons];
-                  let value: number;
-                  let barWidth = "100%";
-                  let barColor = statColors[stat as keyof typeof statColors];
-
-                  if (stat === "health") {
+              {/* HEALTH BAR */}
+              <div className="mb-2">
+                <div className="w-full bg-gray-600 rounded h-5 relative overflow-hidden">
+                  {(() => {
                     const current = enemy.stats.currentHealth;
                     const max = enemy.stats.maxHealth;
-                    value = current;
                     const percentage = Math.max(
                       0,
                       Math.min(100, (current / max) * 100)
                     );
-                    barWidth = `${percentage}%`;
+                    let barColor = "bg-green-300";
                     if (percentage < 30) {
-                      barColor = "bg-red-600";
+                      barColor = "bg-red-300";
                     } else if (percentage < 60) {
-                      barColor = "bg-yellow-500";
-                    } else {
-                      barColor = "bg-green-500";
+                      barColor = "bg-yellow-300";
                     }
-                  } else {
-                    value = enemy.stats[
-                      stat as keyof typeof enemy.stats
-                    ] as number;
-                  }
-
-                  return (
-                    <li key={stat} className="text-sm capitalize">
-                      <div className="w-full bg-gray-600 rounded h-5 mt-1 relative overflow-hidden">
-                        <div
-                          className={`${barColor} h-5 transition-all duration-300 ${
-                            stat === "health" && value === 0
-                              ? "p-0"
-                              : "flex items-center justify-between px-2 text-white text-xs font-medium"
-                          }`}
-                          style={{
-                            width: stat === "health" ? barWidth : "100%",
-                          }}
-                        >
-                          {stat === "health" && value === 0 ? null : (
-                            <>
-                              <div className="flex items-center">{icon}</div>
-                              <span>
-                                {stat === "health"
-                                  ? `${enemy.stats.currentHealth}/${enemy.stats.maxHealth}`
-                                  : value}
-                              </span>
-                            </>
-                          )}
+                    return (
+                      <div
+                        className={`${barColor} h-5 transition-all duration-300 flex items-center justify-between px-2 text-white text-xs font-medium`}
+                        style={{ width: `${percentage}%` }}
+                      >
+                        <div className="flex items-center">
+                          {statIcons.health}
                         </div>
+                        <span>{`${current}/${max}`}</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* OTHER STATS AS TEXT */}
+              <ul className="space-y-1 mt-1">
+                {["attack", "defense", "speed"].map((stat) => {
+                  const icon = statIcons[stat as keyof typeof statIcons];
+                  const value = enemy.stats[
+                    stat as keyof typeof enemy.stats
+                  ] as number;
+                  return (
+                    <li
+                      key={stat}
+                      className="flex items-center gap-2 text-sm capitalize"
+                    >
+                      <div>{icon}</div>
+                      <div className="flex flex-1 items-baseline">
+                        <span className="w-20 text-left text-gray-300">
+                          {stat}
+                        </span>
+                        <span className="pr-2">:</span>
+                        <span className="font-medium">{value}</span>
                       </div>
                     </li>
                   );
@@ -204,15 +227,23 @@ const EnemiesList = ({ enemyData }: { enemyData: ResolvedEnemy[] }) => {
               </ul>
 
               {enemy.passive && (
-                <p className="mt-1 italic text-gray-400">
-                  Passive: {enemy.passive}
-                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="w-24 text-left text-gray-300">Passive</span>
+                  <span className="pr-1">:</span>
+                  <span className="italic text-gray-400 flex-1">
+                    {enemy.passive}
+                  </span>
+                </div>
               )}
 
               {enemy.skill && (
-                <p className="mt-1 italic text-gray-400">
-                  Skill: {enemy.skill}
-                </p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="w-24 text-left text-gray-300">Skill</span>
+                  <span className="pr-1">:</span>
+                  <span className="italic text-gray-400 flex-1">
+                    {enemy.skill}
+                  </span>
+                </div>
               )}
             </div>
           ))}

@@ -282,7 +282,7 @@ export default function GameRoom() {
 
       <div
         ref={chatAreaRef}
-        className="col-start-1 row-start-4 h-[200px] flex-1 overflow-y-auto p-4 space-y-2 hide-scrollbar"
+        className="col-start-1 row-start-4 h-[100px] flex-1 overflow-y-auto p-4 space-y-2 hide-scrollbar"
       >
         {messages.map((msg, index) => (
           <ChatBox
