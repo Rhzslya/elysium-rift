@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { socket } from "../../../lib/socketClient";
 import BattleLogs from "@/components/BattleLogs";
 import BoxRight from "@/components/BoxRight";
@@ -10,6 +10,7 @@ import { ResolvedEnemy, Player, Role } from "@/utils/Type";
 import TitleRoom from "@/components/TitleRoom";
 import ChatBox from "@/components/ChatBox";
 import EnemiesList from "@/components/EnemiesList";
+import { Sword, X } from "lucide-react";
 
 export default function GameRoom() {
   const { roomId } = useParams();
@@ -38,6 +39,25 @@ export default function GameRoom() {
   const [enemyData, setEnemyData] = useState<ResolvedEnemy[]>([]);
   const [turnMessages, setTurnMessages] = useState<string | "">("");
   const [turnStatus, setTurnStatus] = useState<boolean>(false);
+  const [selectedEnemyId, setSelectedEnemyId] = React.useState<string | null>(
+    null
+  );
+  const [isSelectingEnemy, setIsSelectingEnemy] = React.useState(false);
+
+  const handleSingleAttackEnemy = () => {
+    if (!selectedEnemyId) {
+      setIsSelectingEnemy(!isSelectingEnemy);
+    } else {
+      handleAttackEnemy(selectedEnemyId);
+      setSelectedEnemyId(null);
+      setIsSelectingEnemy(false);
+    }
+  };
+
+  const cancelSelectionEnemy = () => {
+    setSelectedEnemyId(null);
+    setIsSelectingEnemy(false);
+  };
 
   useEffect(() => {
     const storedUserId = sessionStorage.getItem("userId");
@@ -311,9 +331,55 @@ export default function GameRoom() {
           ))}
         </div>
       </div>
-      <div className="">Player Status</div>
+
       <PlayerInfo playerName={playerName} players={players} userId={userId} />
-      <div className="col-start-3 row-start-4">Skill Button</div>
+      <div className="relative      col-start-3 row-start-4">
+        {selectedEnemyId && (
+          <div className="button-cancel col-start-3 row-start-1 flex ml-auto mr-4">
+            <button
+              className="cursor-pointer hover:text-red-500 duration-300"
+              onClick={cancelSelectionEnemy}
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+        )}
+        <div className="button-attack row-span-2 col-start-3 row-start-2 flex justify-center items-center">
+          <button
+            onClick={handleSingleAttackEnemy}
+            className={`${
+              selectedEnemyId ? "bg-red-500" : "bg-red-400"
+            } relative hover:bg-red-600 cursor-pointer text-white font-semibold p-3 rounded-full flex items-center justify-center shadow-lg ml-8`}
+          >
+            <Sword className="w-6 h-6" />
+          </button>
+        </div>
+
+        {isSelectingEnemy && (
+          <div className="col-span-2 col-start-1 row-start-3 flex justify-center ml-auto">
+            <div className="flex ">
+              {enemyData
+                .filter((e) => e.isAlive)
+                .map((enemy) => (
+                  <button
+                    key={enemy.id}
+                    onClick={() => {
+                      setSelectedEnemyId(enemy.id);
+                      setIsSelectingEnemy(false);
+                    }}
+                    className={`text-left cursor-pointer text-white text-sm py-1 px-2 rounded-sm transition-all duration-200 font-medium ${
+                      selectedEnemyId === enemy.id
+                        ? "bg-emerald-500 text-white ring-2 ring-emerald-300"
+                        : "hover:bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {enemy.name}
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+      </div>
     </main>
   );
 }
