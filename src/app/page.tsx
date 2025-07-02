@@ -1,49 +1,72 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
+import { useEffect, useState } from "react";
 import Modal from "../components/Modal";
-import { socket } from "@/lib/socketClient";
 import ModalJoinRoom from "@/components/ModalJoinRoom";
+import { useUserSocket } from "@/utils/Contexts";
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
   const [showStartModal, setShowStartModal] = useState(false);
-  const router = useRouter();
   const [roomCode, setRoomCode] = useState("");
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    const storedUserId =
-      sessionStorage.getItem("userId") || crypto.randomUUID();
-    sessionStorage.setItem("userId", storedUserId);
-  }, []);
+  const router = useRouter();
+  const { userId, socket } = useUserSocket();
 
   const handleStart = () => {
-    if (!playerName.trim()) return;
+    if (!playerName.trim() || !userId || !socket) return;
+
     const roomId = nanoid(6);
-    router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}`);
-    const userId = sessionStorage.getItem("userId");
-    socket.emit("join-room", {
-      roomId,
-      username: playerName,
-      userId,
-    });
+
+    if (socket.connected) {
+      emitJoin(roomId);
+    } else {
+      socket.once("connect", () => emitJoin(roomId));
+      socket.connect();
+    }
+  };
+
+  const emitJoin = (roomId: string) => {
+    socket?.emit(
+      "join-room",
+      { roomId, username: playerName, userId },
+      (response: { success: boolean; reason?: string }) => {
+        if (response.success) {
+          setShowJoinModal(false);
+          router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}`);
+        } else {
+          console.error("Join failed:", response.reason);
+          setMessage(response.reason || "Failed to join room");
+          setShowJoinModal(false); // ini akan tutup modal kalau join gagal
+        }
+      }
+    );
   };
 
   const handleJoinRoom = () => {
-    if (!roomCode.trim() || !playerName.trim()) return;
+    if (!roomCode.trim() || !playerName.trim() || !socket) return;
 
-    socket.emit(
+    if (!socket.connected) {
+      // Sama seperti handleStart: tunggu connect dulu
+      socket.once("connect", () => doCheckRoom());
+      socket.connect();
+    } else {
+      doCheckRoom();
+    }
+  };
+
+  const doCheckRoom = () => {
+    console.log("Sending check-room emit");
+    socket?.emit(
       "check-room",
       roomCode,
       (exists: boolean, gameStarted: boolean) => {
+        console.log("check-room response", { exists, gameStarted });
         if (exists) {
-          router.push(
-            `/game/${roomCode}?name=${encodeURIComponent(playerName)}`
-          );
+          emitJoin(roomCode);
         } else if (gameStarted) {
           setMessage("Game already started!");
         } else {
@@ -55,12 +78,12 @@ export default function Home() {
 
   useEffect(() => {
     if (message) {
-      setTimeout(() => {
-        setMessage("");
-      }, 3000);
+      const timer = setTimeout(() => setMessage(""), 3000);
+      return () => clearTimeout(timer);
     }
-  });
+  }, [message]);
 
+  console.log(message);
   return (
     <main className="flex flex-col items-center justify-center min-h-screen text-white p-4">
       <h1 className="text-5xl font-extrabold mb-6 tracking-wide text-amber-400">

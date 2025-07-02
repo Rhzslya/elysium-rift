@@ -7,7 +7,11 @@ const hostname = process.env.HOSTNAME || "localhost";
 const port = parseInt(process.env.PORT || "3000", 10);
 import { roles } from "./src/utils/Roles/index.js";
 import { stages } from "./src/utils/Stages/index.js";
-import { EntityWithPassive, ResolvedEnemy } from "./src/utils/Type/index.js";
+import {
+  EntityWithPassive,
+  Player,
+  ResolvedEnemy,
+} from "./src/utils/Type/index.js";
 import { enemies } from "./src/utils/Enemies/index.js";
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -18,6 +22,7 @@ app.prepare().then(() => {
 
   const roomStates: {
     [roomId: string]: {
+      players?: Player[];
       countdownTimer?: NodeJS.Timeout;
       autoAssignTimeout?: NodeJS.Timeout;
       gameStarted?: boolean;
@@ -34,31 +39,43 @@ app.prepare().then(() => {
   io.on("connection", (socket) => {
     console.log("User connected", socket.id);
 
+    const removePlayerFromRoom = (roomId: string, userId: string) => {
+      const room = roomStates[roomId];
+      if (!room || !room.players) return;
+
+      const idx = room.players.findIndex((p) => p.userId === userId);
+      if (idx !== -1) {
+        room.players.splice(idx, 1);
+      }
+    };
+
     const updatePlayersList = (roomId: string, resetReady = false) => {
       const room = io.sockets.adapter.rooms.get(roomId);
-      if (!room) return;
+      if (!room) return [];
 
       const players = Array.from(room)
-        .map((id) => {
-          const player = io.sockets.sockets.get(id);
+        .map((socketId) => {
+          const player = io.sockets.sockets.get(socketId);
           if (!player) return null;
 
           if (resetReady) player.data.isReady = false;
 
           return {
-            userId: player?.data.userId,
-            username: player?.data.username,
-            isReady: player?.data.isReady || false,
-            roles: player?.data.roles || null,
-            roleSelected: player?.data.roleSelected || false,
+            userId: player.data.userId,
+            username: player.data.username,
+            isReady: player.data.isReady || false,
+            roles: player.data.roles || null,
+            roleSelected: player.data.roleSelected || false,
           };
         })
-        .filter((username) => username !== null);
+        .filter(
+          (player): player is NonNullable<typeof player> => player !== null
+        );
 
       io.to(roomId).emit("update-players", players);
 
       console.log(
-        `Players in room ${roomId}: ${players.map((p) => p.username)}`
+        `Players in room ${roomId}: ${players.map((p) => p.username).join(",")}`
       );
 
       return players;
@@ -170,7 +187,7 @@ app.prepare().then(() => {
                     message: "Kamu telah dikalahkan oleh musuh!",
                   });
 
-                  stages
+                  stages;
                 }
 
                 // Apply passive setelah HP di-update
@@ -332,11 +349,28 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("join-room", ({ roomId, username, userId }) => {
-      if (socket.rooms.has(roomId)) {
-        return;
+    socket.on("join-room", ({ roomId, username, userId }, callback) => {
+      const socketsInRoom = io.sockets.adapter.rooms.get(roomId);
+
+      if (socketsInRoom) {
+        for (const socketId of socketsInRoom) {
+          const existingSocket = io.sockets.sockets.get(socketId);
+          if (existingSocket?.data.userId === userId) {
+            console.warn(
+              `Duplicate userId detected: ${userId} already in room ${roomId}`
+            );
+            callback?.({
+              success: false,
+              reason: "User already joined in this room",
+            });
+            return;
+          }
+        }
       }
+
+      // Join user ke room
       socket.join(roomId);
+      socket.data.roomId = roomId; // tambahkan roomId ke data socket
       socket.data.userId = userId;
       socket.data.username = username;
       socket.data.isReady = false;
@@ -346,7 +380,6 @@ app.prepare().then(() => {
       if (roomStates[roomId]?.countdownTimer) {
         clearInterval(roomStates[roomId].countdownTimer);
         roomStates[roomId].countdownTimer = undefined;
-
         io.to(roomId).emit("countdown", null);
         io.to(roomId).emit("temp-message", {
           message: `${username} joined. Countdown canceled.`,
@@ -362,20 +395,9 @@ app.prepare().then(() => {
       );
 
       const players = updatePlayersList(roomId);
-
-      console.log(
-        "Player List:",
-        players?.map((p) => ({
-          username: p.username,
-          role: p.roles || "Not selected",
-          roleSelected: p.roleSelected ?? false,
-          isReady: p.isReady,
-        }))
-      );
-
-      socket.to(roomId).emit("update-players", players);
-
+      io.to(roomId).emit("update-players", players);
       socket.to(roomId).emit("user-joined", `${username} has joined the game.`);
+      callback?.({ success: true });
     });
 
     socket.on("message", ({ message, roomId, sender }) => {
@@ -777,26 +799,20 @@ app.prepare().then(() => {
     });
 
     socket.on("disconnect", () => {
-      const roomId = Object.keys(socket.rooms)[1];
+      const { userId, username, roomId } = socket.data;
+      if (roomId && userId) {
+        console.log(
+          `User ${username} (${userId}) disconnected. Removing from room ${roomId}`
+        );
 
-      if (roomStates[roomId]?.gameStarted) {
-        const room = io.sockets.adapter.rooms.get(roomId);
-        if (room) {
-          const players = Array.from(room).map((id) => {
-            const playerSocket = io.sockets.sockets.get(id);
-            return {
-              userId: playerSocket?.data.userId,
-              username: playerSocket?.data.username,
-              isReady: playerSocket?.data.isReady || false,
-              roles: playerSocket?.data.roles || null,
-            };
-          });
-        }
+        // Hapus player dari roomStates
+        removePlayerFromRoom(roomId, userId);
+
+        // Emit update ke semua player di room
+        const players = updatePlayersList(roomId);
+        io.to(roomId).emit("update-players", players);
+        socket.to(roomId).emit("user-left", `${username} has left the game.`);
       }
-
-      socket.data.isReady = false;
-      socket.data.gameStarted = false;
-      console.log("User disconnected", socket.id);
     });
   });
 

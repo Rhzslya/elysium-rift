@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { UserSocketProvider } from "@/utils/Contexts";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +28,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-b from-gray-900 to-black`}
       >
-        <div className="mx-auto w-full px-4 ">{children}</div>
+        <UserSocketProvider>
+          <div className="mx-auto w-full px-4 ">{children}</div>
+        </UserSocketProvider>
       </body>
     </html>
   );

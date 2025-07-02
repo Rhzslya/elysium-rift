@@ -2,9 +2,8 @@
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
-import { socket } from "../../../lib/socketClient";
+import { useUserSocket } from "@/utils/Contexts";
 import BattleLogs from "@/components/BattleLogs";
-import BoxRight from "@/components/BoxRight";
 import PlayerInfo from "@/components/PlayerInfo";
 import { ResolvedEnemy, Player, Role } from "@/utils/Type";
 import TitleRoom from "@/components/TitleRoom";
@@ -13,9 +12,11 @@ import EnemiesList from "@/components/EnemiesList";
 import { Sword, X } from "lucide-react";
 
 export default function GameRoom() {
+  const { socket, userId } = useUserSocket(); // ini yang benar
   const { roomId } = useParams();
   const searchParams = useSearchParams();
   const playerName = searchParams.get("name");
+
   const router = useRouter();
   const [countdown, setCountdown] = useState<number | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -24,7 +25,6 @@ export default function GameRoom() {
     { sender: string; message: string; messageId?: string }[]
   >([]);
   const [players, setPlayers] = useState<Player[]>([]);
-  const [userId, setUserId] = useState<string | undefined>();
   const [messages, setMessages] = useState<
     { sender: string; message: string; messageId?: string }[]
   >([]);
@@ -60,14 +60,7 @@ export default function GameRoom() {
   };
 
   useEffect(() => {
-    const storedUserId = sessionStorage.getItem("userId");
-    if (storedUserId) {
-      setUserId(storedUserId);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!userId || !playerName || !roomId || hasJoined) return;
+    if (!socket || !userId || !playerName || !roomId || hasJoined) return;
 
     setPlayers([{ userId, username: playerName, isReady: false, roles: null }]);
     socket.emit("join-room", {
@@ -182,14 +175,13 @@ export default function GameRoom() {
   console.log(`Turn Status ${turnStatus}`);
 
   const handleReady = () => {
+    if (!socket) return;
     if (players.length <= 1) {
       setTempMessage(
         "Not enough players to start the game. Please wait for the other player to join."
       );
-
       return;
     }
-
     const currentPlayer = players.find((p) => p.userId === userId);
     const newIsReady = !currentPlayer?.isReady;
 
@@ -202,11 +194,12 @@ export default function GameRoom() {
     socket.emit("game-start", {
       roomId,
       isReady: newIsReady,
-      countdown: countdown,
+      countdown,
     });
   };
 
   useEffect(() => {
+    if (!socket) return;
     const handleCountdown = (value: number | null) => {
       setCountdown(value);
     };
@@ -225,12 +218,14 @@ export default function GameRoom() {
   }, []);
 
   const handleExitRoom = () => {
+    if (!socket) return;
     socket.emit("exit-room", roomId, playerName);
 
     router.push("/");
   };
 
   const handleSendMessage = (message: string) => {
+    if (!socket) return;
     if (!playerName) return; // Tambah validasi biar aman
     const data = { roomId, message, sender: playerName };
     setMessages((prev) => [...prev, { sender: playerName, message }]);
@@ -254,12 +249,13 @@ export default function GameRoom() {
   }, [tempMessage]);
 
   const handleSelectionRoles = (role: Role) => {
+    if (!socket) return;
     socket.emit("player-selected-role", { roomId, userId, role });
     setHasChosenRole(true);
   };
 
   const handleAttackEnemy = (enemyId: string) => {
-    if (!stage || !userId) return;
+    if (!socket || !stage || !userId) return;
 
     socket.on("update-enemies", ({ enemies }) => {
       setEnemyData(enemies);

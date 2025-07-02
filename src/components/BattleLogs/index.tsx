@@ -29,7 +29,7 @@ const BattleLogs = ({
   handleSendMessage: (message: string) => void;
   players: Player[];
   setPlayers: (players: Player[]) => void;
-  userId: string | undefined;
+  userId: string | null;
   tempMessage: string | null;
   gameStarted: boolean;
   handleSelectionRoles: (role: Role) => void;
