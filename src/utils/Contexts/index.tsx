@@ -24,10 +24,10 @@ export const UserSocketProvider = ({
   useEffect(() => {
     let mounted = true;
 
-    let storedUserId = localStorage.getItem("userId");
+    let storedUserId = sessionStorage.getItem("userId");
     if (!storedUserId) {
       storedUserId = crypto.randomUUID();
-      localStorage.setItem("userId", storedUserId);
+      sessionStorage.setItem("userId", storedUserId);
     }
 
     if (mounted) setUserId(storedUserId);

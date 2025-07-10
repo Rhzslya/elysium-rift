@@ -54,6 +54,9 @@ export default function GameRoom() {
     }
   };
 
+  console.log(userId);
+  console.log(socket);
+
   const cancelSelectionEnemy = () => {
     setSelectedEnemyId(null);
     setIsSelectingEnemy(false);
