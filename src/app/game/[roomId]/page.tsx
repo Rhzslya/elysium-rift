@@ -12,7 +12,7 @@ import EnemiesList from "@/components/EnemiesList";
 import { Sword, X } from "lucide-react";
 
 export default function GameRoom() {
-  const { socket, userId } = useUserSocket(); // ini yang benar
+  const { socket, userId } = useUserSocket();
   const { roomId } = useParams();
   const searchParams = useSearchParams();
   const playerName = searchParams.get("name");
@@ -65,14 +65,9 @@ export default function GameRoom() {
   useEffect(() => {
     if (!socket || !userId || !playerName || !roomId || hasJoined) return;
 
-    setPlayers([{ userId, username: playerName, isReady: false, roles: null }]);
-    socket.emit("join-room", {
-      roomId,
-      username: playerName,
-      userId,
-    });
-
     setHasJoined(true);
+
+    setPlayers([{ userId, username: playerName, isReady: false, roles: null }]);
 
     socket.on("message", (data) => {
       const { sender, message, messageId } = data;

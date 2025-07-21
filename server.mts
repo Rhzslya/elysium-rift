@@ -375,6 +375,12 @@ app.prepare().then(() => {
       socket.data.username = username;
       socket.data.isReady = false;
 
+      console.log(`Incoming join-room:`, {
+        userId,
+        roomId,
+        socketId: socket.id,
+      });
+
       resetPlayerRoles(roomId);
 
       if (roomStates[roomId]?.countdownTimer) {
