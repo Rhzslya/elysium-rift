@@ -402,6 +402,7 @@ app.prepare().then(() => {
 
       const players = updatePlayersList(roomId);
       io.to(roomId).emit("update-players", players);
+      console.log(`Player List: ${players.map((p) => p.username).join(",")}`);
       socket.to(roomId).emit("user-joined", `${username} has joined the game.`);
       callback?.({ success: true });
     });

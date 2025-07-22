@@ -16,6 +16,7 @@ export default function GameRoom() {
   const { roomId } = useParams();
   const searchParams = useSearchParams();
   const playerName = searchParams.get("name");
+  const isHost = searchParams.get("host") === "true";
 
   const router = useRouter();
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -56,6 +57,7 @@ export default function GameRoom() {
 
   console.log(userId);
   console.log(socket);
+  console.log(players);
 
   const cancelSelectionEnemy = () => {
     setSelectedEnemyId(null);
@@ -65,9 +67,25 @@ export default function GameRoom() {
   useEffect(() => {
     if (!socket || !userId || !playerName || !roomId || hasJoined) return;
 
-    setHasJoined(true);
+    if (!socket || !roomId || !userId || !playerName) return;
 
-    setPlayers([{ userId, username: playerName, isReady: false, roles: null }]);
+    // Setup listener terlebih dahulu
+    const handleUpdatePlayers = (players: Player[]) => {
+      setPlayers(players);
+    };
+    socket.on("update-players", handleUpdatePlayers);
+
+    // Emit join-room setelah listener siap
+    const join = () => {
+      socket.emit("join-room", { roomId, username: playerName, userId });
+    };
+
+    if (socket.connected) {
+      join();
+    } else {
+      socket.once("connect", join);
+      socket.connect();
+    }
 
     socket.on("message", (data) => {
       const { sender, message, messageId } = data;
@@ -90,10 +108,6 @@ export default function GameRoom() {
 
     socket.on("user-joined", (message) => {
       setMessages((prev) => [...prev, { sender: "system", message }]);
-    });
-
-    socket.on("update-players", (playersList: Player[]) => {
-      setPlayers(playersList);
     });
 
     socket.on("update-enemies", ({ enemies }) => {
@@ -168,9 +182,7 @@ export default function GameRoom() {
       socket.off("player-turn");
       socket.off("game-over");
     };
-  }, [userId, roomId, playerName]);
-
-  console.log(`Turn Status ${turnStatus}`);
+  }, [socket, userId, roomId, playerName]);
 
   const handleReady = () => {
     if (!socket) return;
@@ -264,13 +276,6 @@ export default function GameRoom() {
       userId: userId,
     });
   };
-
-  console.log(`Player List ${players.map((p) => p.username)}`);
-  console.log(`Stage Data ${stage}`);
-  console.log(`Enemy Data ${enemyData}`);
-  console.log(`Has Chosen Role ${hasChosenRole}`);
-  console.log(`Game State ${gameStarted}`);
-  console.log(messages);
 
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-3 grid-rows-[0.5fr_1fr_1fr_auto] gap-2">

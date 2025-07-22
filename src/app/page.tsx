@@ -20,29 +20,8 @@ export default function Home() {
     if (!playerName.trim() || !userId || !socket) return;
 
     const roomId = nanoid(6);
-
-    if (socket.connected) {
-      emitJoin(roomId);
-    } else {
-      socket.once("connect", () => emitJoin(roomId));
-      socket.connect();
-    }
-  };
-
-  const emitJoin = (roomId: string) => {
-    socket?.emit(
-      "join-room",
-      { roomId, username: playerName, userId },
-      (response: { success: boolean; reason?: string }) => {
-        if (response.success) {
-          setShowJoinModal(false);
-          router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}`);
-        } else {
-          console.error("Join failed:", response.reason);
-          setMessage(response.reason || "Failed to join room");
-          setShowJoinModal(false); // ini akan tutup modal kalau join gagal
-        }
-      }
+    router.push(
+      `/game/${roomId}?name=${encodeURIComponent(playerName)}&host=true`
     );
   };
 
@@ -50,7 +29,6 @@ export default function Home() {
     if (!roomCode.trim() || !playerName.trim() || !socket) return;
 
     if (!socket.connected) {
-      // Sama seperti handleStart: tunggu connect dulu
       socket.once("connect", () => doCheckRoom());
       socket.connect();
     } else {
@@ -59,14 +37,16 @@ export default function Home() {
   };
 
   const doCheckRoom = () => {
-    console.log("Sending check-room emit");
     socket?.emit(
       "check-room",
       roomCode,
       (exists: boolean, gameStarted: boolean) => {
-        console.log("check-room response", { exists, gameStarted });
         if (exists) {
-          emitJoin(roomCode);
+          router.push(
+            `/game/${roomCode}?name=${encodeURIComponent(
+              playerName
+            )}&host=false`
+          );
         } else if (gameStarted) {
           setMessage("Game already started!");
         } else {
@@ -83,7 +63,6 @@ export default function Home() {
     }
   }, [message]);
 
-  console.log(message);
   return (
     <main className="flex flex-col items-center justify-center min-h-screen text-white p-4">
       <h1 className="text-5xl font-extrabold mb-6 tracking-wide text-amber-400">
@@ -110,6 +89,7 @@ export default function Home() {
           Credits
         </button>
       </div>
+
       {showStartModal && (
         <Modal
           playerName={playerName}
