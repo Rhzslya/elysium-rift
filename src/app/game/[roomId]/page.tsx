@@ -39,7 +39,6 @@ export default function GameRoom() {
   } | null>(null);
   const [enemyData, setEnemyData] = useState<ResolvedEnemy[]>([]);
   const [turnMessages, setTurnMessages] = useState<string | "">("");
-  const [turnStatus, setTurnStatus] = useState<boolean>(false);
   const [selectedEnemyId, setSelectedEnemyId] = React.useState<string | null>(
     null
   );
@@ -54,10 +53,6 @@ export default function GameRoom() {
       setIsSelectingEnemy(false);
     }
   };
-
-  console.log(userId);
-  console.log(socket);
-  console.log(players);
 
   const cancelSelectionEnemy = () => {
     setSelectedEnemyId(null);
@@ -110,61 +105,6 @@ export default function GameRoom() {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
 
-    socket.on("update-enemies", ({ enemies }) => {
-      setEnemyData(enemies);
-    });
-
-    socket.on("stage-started", ({ stageId, stageName, intro, enemies }) => {
-      setStage({ stageId, stageName, intro });
-      setEnemyData(enemies);
-    });
-
-    socket.on("clear-stage", () => {
-      setStage(null);
-      setEnemyData([]);
-      setHasChosenRole(false);
-    });
-
-    socket.on("player-turn", ({ message, status }) => {
-      setTempMessage(message);
-      setTurnStatus(status);
-    });
-
-    socket.on("auto-role-selected", ({ userId, role, roleSelected }) => {
-      setPlayers((prev) =>
-        prev.map((player) => {
-          if (player.userId === userId) {
-            return {
-              ...player,
-              roles: role,
-              roleSelected,
-            };
-          }
-
-          return player;
-        })
-      );
-
-      setHasChosenRole(true);
-    });
-
-    socket.on("battle-phase-update", ({ phase, message, duration }) => {
-      console.log("🔄 Phase changed:", phase);
-      setTurnMessages(message);
-
-      if (duration) {
-        setTimeout(() => {
-          setTurnMessages("");
-        }, duration);
-      }
-    });
-
-    socket.on("game-over", ({ sender, message, messageId }) => {
-      setLogs((prev) => [...prev, { sender, message, messageId }]);
-      setTurnStatus(false);
-      setStage(null);
-    });
-
     socket.on("user-left", (message) => {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
@@ -173,25 +113,13 @@ export default function GameRoom() {
       socket.off("message");
       socket.off("user-joined");
       socket.off("update-players");
-      socket.off("game-started");
       socket.off("user-left");
-      socket.off("game-started");
-      socket.off("auto-role-selected");
-      socket.off("stage-started");
-      socket.off("update-enemies");
-      socket.off("player-turn");
-      socket.off("game-over");
     };
   }, [socket, userId, roomId, playerName]);
 
   const handleReady = () => {
-    if (!socket) return;
-    if (players.length <= 1) {
-      setTempMessage(
-        "Not enough players to start the game. Please wait for the other player to join."
-      );
-      return;
-    }
+    if (!socket || !userId) return;
+
     const currentPlayer = players.find((p) => p.userId === userId);
     const newIsReady = !currentPlayer?.isReady;
 
@@ -199,12 +127,6 @@ export default function GameRoom() {
       roomId,
       username: playerName,
       isReady: newIsReady,
-    });
-
-    socket.emit("game-start", {
-      roomId,
-      isReady: newIsReady,
-      countdown,
     });
   };
 

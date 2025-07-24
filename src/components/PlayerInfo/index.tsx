@@ -23,10 +23,11 @@ const PlayerInfo = ({
   userId,
 }: {
   playerName: string | null;
-  players: Player[];
-  userId: string | undefined;
+  players: Player[] | [];
+  userId: string | null;
 }) => {
-  const currentPlayer = players.find((player) => player.userId === userId);
+  const currentPlayer =
+    players?.find((player) => player.userId === userId) || null;
   console.log(currentPlayer);
 
   return (

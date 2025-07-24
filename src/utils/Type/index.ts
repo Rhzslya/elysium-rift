@@ -16,9 +16,9 @@ export type Role = {
 };
 
 export type Player = {
-  userId: string | undefined;
-  username: string;
-  isReady: boolean;
+  userId: string | null;
+  username: string | null;
+  isReady: boolean | false;
   roles: Role | null;
 };
 
