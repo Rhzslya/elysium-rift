@@ -120,6 +120,11 @@ export default function GameRoom() {
   const handleReady = () => {
     if (!socket || !userId) return;
 
+    if (players.length < 2) {
+      setTempMessage("At least 2 players are required to ready up.");
+      return;
+    }
+
     const currentPlayer = players.find((p) => p.userId === userId);
     const newIsReady = !currentPlayer?.isReady;
 

@@ -144,12 +144,24 @@ app.prepare().then(() => {
     });
 
     socket.on("player-ready", ({ roomId, username, isReady }) => {
+      const room = io.sockets.adapter.rooms.get(roomId);
+      if (!room || room.size < 2) {
+        socket.emit("temp-message", {
+          message: "Cannot ready up: Minimum 2 players required in the room.",
+        });
+        return;
+      }
+
       socket.data.isReady = isReady;
 
       console.log(`${username} is now ${isReady ? "ready" : "not ready"}`);
 
       const players = getPlayersFromRoom(roomId);
       io.to(roomId).emit("update-players", players);
+
+      if (allPlayersReady(roomId)) {
+        io.to(roomId).emit("game-started", true);
+      }
     });
 
     function getPlayersFromRoom(roomId: string) {
@@ -165,6 +177,18 @@ app.prepare().then(() => {
         };
       });
     }
+
+    const allPlayersReady = (roomId: string): boolean => {
+      const socketsInRoom = io.sockets.adapter.rooms.get(roomId);
+      if (!socketsInRoom) return false;
+
+      for (const socketId of socketsInRoom) {
+        const socket = io.sockets.sockets.get(socketId);
+        if (!socket?.data.isReady) return false;
+      }
+
+      return true;
+    };
 
     socket.on("exit-room", (roomId, username) => {
       socket.data.isReady = false;
