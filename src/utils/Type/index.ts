@@ -84,3 +84,12 @@ export type ResolvedEnemy = {
 export type EntityType = "player" | "enemy";
 
 export type EntityWithPassive = Role | ResolvedEnemy;
+
+export type RoomStates = {
+  [roomId: string]: {
+    players?: Player[];
+    countdownTimer?: NodeJS.Timeout;
+    autoAssignTimeout?: NodeJS.Timeout;
+    gameStarted?: boolean;
+  };
+};

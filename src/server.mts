@@ -5,7 +5,10 @@ import { Server } from "socket.io";
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME || "localhost";
 const port = parseInt(process.env.PORT || "3000", 10);
-import { Player } from "./src/utils/Type/index.js";
+import { Player } from "./utils/Type/index.js";
+import { getPlayersFromRoom } from "./utils/GetPlayersFromRoom/index.js";
+import { removePlayerFromRoom } from "./utils/RemovePlayerFromRoom/index.js";
+import { updatePlayersList } from "./utils/UpdatePlayerList/index.js";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
@@ -24,48 +27,6 @@ app.prepare().then(() => {
 
   io.on("connection", (socket) => {
     console.log("User connected", socket.id);
-
-    const removePlayerFromRoom = (roomId: string, userId: string) => {
-      const room = roomStates[roomId];
-      if (!room || !room.players) return;
-
-      const idx = room.players.findIndex((p) => p.userId === userId);
-      if (idx !== -1) {
-        room.players.splice(idx, 1);
-      }
-    };
-
-    const updatePlayersList = (roomId: string, resetReady = false) => {
-      const room = io.sockets.adapter.rooms.get(roomId);
-      if (!room) return [];
-
-      const players = Array.from(room)
-        .map((socketId) => {
-          const player = io.sockets.sockets.get(socketId);
-          if (!player) return null;
-
-          if (resetReady) player.data.isReady = false;
-
-          return {
-            userId: player.data.userId,
-            username: player.data.username,
-            isReady: player.data.isReady || false,
-            roles: player.data.roles || null,
-            roleSelected: player.data.roleSelected || false,
-          };
-        })
-        .filter(
-          (player): player is NonNullable<typeof player> => player !== null
-        );
-
-      io.to(roomId).emit("update-players", players);
-
-      console.log(
-        `Players in room ${roomId}: ${players.map((p) => p.username).join(",")}`
-      );
-
-      return players;
-    };
 
     socket.on("check-room", (roomId, callback) => {
       const gameStarted = roomStates[roomId]?.gameStarted ?? false;
@@ -131,7 +92,7 @@ app.prepare().then(() => {
         `User ${username} joined room ${roomId} with userId ${userId}`
       );
 
-      const players = updatePlayersList(roomId);
+      const players = updatePlayersList(io, roomId);
       io.to(roomId).emit("update-players", players);
       console.log(`Player List: ${players.map((p) => p.username).join(",")}`);
       socket.to(roomId).emit("user-joined", `${username} has joined the game.`);
@@ -147,7 +108,7 @@ app.prepare().then(() => {
       const room = io.sockets.adapter.rooms.get(roomId);
       if (!room || room.size < 2) {
         socket.emit("temp-message", {
-          message: "Cannot ready up: Minimum 2 players required in the room.",
+          message: "Minimum 2 players required in the room.",
         });
         return;
       }
@@ -156,27 +117,13 @@ app.prepare().then(() => {
 
       console.log(`${username} is now ${isReady ? "ready" : "not ready"}`);
 
-      const players = getPlayersFromRoom(roomId);
+      const players = getPlayersFromRoom(io, roomId);
       io.to(roomId).emit("update-players", players);
 
       if (allPlayersReady(roomId)) {
         io.to(roomId).emit("game-started", true);
       }
     });
-
-    function getPlayersFromRoom(roomId: string) {
-      const room = io.sockets.adapter.rooms.get(roomId);
-      if (!room) return [];
-      return Array.from(room).map((socketId) => {
-        const playerSocket = io.sockets.sockets.get(socketId);
-        return {
-          userId: playerSocket?.data.userId,
-          username: playerSocket?.data.username,
-          isReady: playerSocket?.data.isReady || false,
-          roles: playerSocket?.data.roles || null,
-        };
-      });
-    }
 
     const allPlayersReady = (roomId: string): boolean => {
       const socketsInRoom = io.sockets.adapter.rooms.get(roomId);
@@ -205,13 +152,13 @@ app.prepare().then(() => {
         });
       }
 
-      updatePlayersList(roomId, true);
+      updatePlayersList(io, roomId, true);
 
       console.log(`User ${username} left room ${roomId}`);
       io.to(roomId).emit("user-left", `${username} has left room.`);
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", (reason) => {
       const { userId, username, roomId } = socket.data;
       if (roomId && userId) {
         console.log(
@@ -219,10 +166,12 @@ app.prepare().then(() => {
         );
 
         // Hapus player dari roomStates
-        removePlayerFromRoom(roomId, userId);
+        removePlayerFromRoom(roomStates, roomId, userId);
+
+        console.log("Socket disconnected:", socket.id, reason);
 
         // Emit update ke semua player di room
-        const players = updatePlayersList(roomId);
+        const players = updatePlayersList(io, roomId);
         io.to(roomId).emit("update-players", players);
         socket.to(roomId).emit("user-left", `${username} has left the game.`);
       }

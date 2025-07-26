@@ -20,9 +20,7 @@ export default function Home() {
     if (!playerName.trim() || !userId || !socket) return;
 
     const roomId = nanoid(6);
-    router.push(
-      `/game/${roomId}?name=${encodeURIComponent(playerName)}&host=true`
-    );
+    router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}`);
   };
 
   const handleJoinRoom = () => {
@@ -43,9 +41,7 @@ export default function Home() {
       (exists: boolean, gameStarted: boolean) => {
         if (exists) {
           router.push(
-            `/game/${roomCode}?name=${encodeURIComponent(
-              playerName
-            )}&host=false`
+            `/game/${roomCode}?name=${encodeURIComponent(playerName)}`
           );
         } else if (gameStarted) {
           setMessage("Game already started!");
