@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import BattleLogsChat from "../BattleLogsChat";
 import ChatForm from "../ChatForm";
-import { socket } from "@/lib/socketClient";
 import { ResolvedEnemy, Player, Role, Stage } from "@/utils/Type";
 
 const BattleLogs = ({
@@ -42,16 +41,6 @@ const BattleLogs = ({
   const currentPlayer = players.find((p) => p.userId === userId);
   const isReady = currentPlayer?.isReady ?? false;
   const [availableRoles, setAvailableRoles] = useState<any>([]);
-
-  useEffect(() => {
-    socket.on("choose-role-phase", (roles: Role[]) => {
-      setAvailableRoles(roles);
-    });
-
-    return () => {
-      socket.removeAllListeners("choose-role-phase");
-    };
-  }, [gameStarted]);
 
   return (
     <section className="battle-logs relative w-fulltext-white flex flex-col items-center row-span-3 col-start-2 row-start-2">

@@ -1,5 +1,6 @@
 "use client";
 
+import { getSocket } from "@/lib/socketClient";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
@@ -32,7 +33,7 @@ export const UserSocketProvider = ({
 
     if (mounted) setUserId(storedUserId);
 
-    const s = io({ autoConnect: false });
+    const s = getSocket();
     if (mounted) setSocket(s);
 
     return () => {
@@ -44,8 +45,8 @@ export const UserSocketProvider = ({
   useEffect(() => {
     if (!socket) return;
 
-    const handleConnect = () => console.log("🔌 Socket connected", socket.id);
-    const handleDisconnect = () => console.log("❌ Socket disconnected");
+    const handleConnect = () => console.log("Socket connected", socket.id);
+    const handleDisconnect = () => console.log("Socket disconnected");
 
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
