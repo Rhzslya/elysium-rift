@@ -43,7 +43,7 @@ const BattleLogs = ({
   const [availableRoles, setAvailableRoles] = useState<any>([]);
 
   return (
-    <section className="battle-logs relative w-fulltext-white flex flex-col items-center row-span-3 col-start-2 row-start-2">
+    <section className="battle-logs relative w-full text-white flex flex-col items-center row-span-3 col-start-2 row-start-2">
       <div className="flex flex-col w-full max-w-[800px] h-[600px] overflow-y-auto bg-gray-800 rounded-lg">
         <div className="sticky top-0 bg-gray-800 z-10 px-4 py-2 border-b border-gray-700">
           <h2 className="text-2xl font-semibold">Battle Logs</h2>
@@ -66,7 +66,7 @@ const BattleLogs = ({
         </div>
       </div>
 
-      <div className="w-full max-w-xl mt-3">
+      <div className="w-full mt-3">
         <ChatForm onSendMessage={handleSendMessage} />
         <div className="flex items-center justify-center gap-2">
           <div className="exit-btn mt-3 mr-auto">

@@ -9,6 +9,7 @@ import { Player } from "./utils/Type/index.js";
 import { getPlayersFromRoom } from "./utils/GetPlayersFromRoom/index.js";
 import { removePlayerFromRoom } from "./utils/RemovePlayerFromRoom/index.js";
 import { updatePlayersList } from "./utils/UpdatePlayerList/index.js";
+import { allPlayersReady } from "./utils/AllPlayersReady/index.js";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
@@ -120,22 +121,36 @@ app.prepare().then(() => {
       const players = getPlayersFromRoom(io, roomId);
       io.to(roomId).emit("update-players", players);
 
-      if (allPlayersReady(roomId)) {
-        io.to(roomId).emit("game-started", true);
+      if (allPlayersReady(io, roomId) && !roomStates[roomId]?.countdownTimer) {
+        console.log(
+          `All Players in Room ${roomId} are ready. Starting Countdown.`
+        );
+
+        if (!roomStates[roomId]) {
+          roomStates[roomId] = {};
+        }
+
+        let countdown = 5;
+        io.to(roomId).emit("countdown", countdown);
+
+        const timer = setInterval(() => {
+          countdown--;
+          io.to(roomId).emit("countdown", countdown);
+
+          if (countdown <= 0) {
+            clearInterval(timer);
+            roomStates[roomId].countdownTimer = undefined;
+
+            roomStates[roomId].gameStarted = true;
+
+            io.to(roomId).emit("start-game");
+            console.log(`Game started in room ${roomId}`);
+          }
+        }, 1000);
+
+        roomStates[roomId].countdownTimer = timer;
       }
     });
-
-    const allPlayersReady = (roomId: string): boolean => {
-      const socketsInRoom = io.sockets.adapter.rooms.get(roomId);
-      if (!socketsInRoom) return false;
-
-      for (const socketId of socketsInRoom) {
-        const socket = io.sockets.sockets.get(socketId);
-        if (!socket?.data.isReady) return false;
-      }
-
-      return true;
-    };
 
     socket.on("exit-room", (roomId, username) => {
       socket.data.isReady = false;

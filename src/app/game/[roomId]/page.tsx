@@ -104,6 +104,10 @@ export default function GameRoom() {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
 
+    socket.on("countdown", (value) => {
+      setCountdown(value);
+    });
+
     socket.on("user-left", (message) => {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
@@ -197,6 +201,8 @@ export default function GameRoom() {
       userId: userId,
     });
   };
+
+  console.log(gameStarted);
 
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-3 grid-rows-[0.5fr_1fr_1fr_auto] gap-2">
