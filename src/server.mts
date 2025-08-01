@@ -121,6 +121,17 @@ app.prepare().then(() => {
       const players = getPlayersFromRoom(io, roomId);
       io.to(roomId).emit("update-players", players);
 
+      if (roomStates[roomId]?.countdownTimer && !allPlayersReady(io, roomId)) {
+        clearInterval(roomStates[roomId].countdownTimer);
+        roomStates[roomId].countdownTimer = undefined;
+
+        io.to(roomId).emit("countdown-cancelled");
+        io.to(roomId).emit("temp-message", {
+          message: `Countdown cancelled`,
+        });
+        console.log(`Countdown cancelled in room ${roomId}`);
+      }
+
       if (allPlayersReady(io, roomId) && !roomStates[roomId]?.countdownTimer) {
         console.log(
           `All Players in Room ${roomId} are ready. Starting Countdown.`

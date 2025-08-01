@@ -108,6 +108,10 @@ export default function GameRoom() {
       setCountdown(value);
     });
 
+    socket.on("countdown-cancelled", () => {
+      setCountdown(null);
+    });
+
     socket.on("user-left", (message) => {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
@@ -117,6 +121,7 @@ export default function GameRoom() {
       socket.off("user-joined");
       socket.off("update-players");
       socket.off("user-left");
+      socket.off("countdown-cancelled");
     };
   }, [socket, userId, roomId, playerName]);
 

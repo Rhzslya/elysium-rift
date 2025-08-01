@@ -80,7 +80,7 @@ const BattleLogsChat = ({
           </div>
         )}
 
-        {tempMessage && (
+        {tempMessage && countdown === null && (
           <div className="text-center">
             <span className="text-red-400 font-medium">{tempMessage}</span>
           </div>
