@@ -116,12 +116,17 @@ export default function GameRoom() {
       setMessages((prev) => [...prev, { sender: "system", message }]);
     });
 
+    socket.on("game-started", (started) => {
+      setGameStarted(started);
+    });
+
     return () => {
       socket.off("message");
       socket.off("user-joined");
       socket.off("update-players");
       socket.off("user-left");
       socket.off("countdown-cancelled");
+      socket.off("game-started");
     };
   }, [socket, userId, roomId, playerName]);
 
@@ -137,25 +142,6 @@ export default function GameRoom() {
       isReady: newIsReady,
     });
   };
-
-  useEffect(() => {
-    if (!socket) return;
-    const handleCountdown = (value: number | null) => {
-      setCountdown(value);
-    };
-
-    const handleGameStarted = (started: boolean) => {
-      setGameStarted(started);
-    };
-
-    socket.on("countdown", handleCountdown);
-    socket.on("game-started", handleGameStarted);
-
-    return () => {
-      socket.off("countdown", handleCountdown);
-      socket.off("game-started", handleGameStarted);
-    };
-  }, []);
 
   const handleExitRoom = () => {
     if (!socket) return;

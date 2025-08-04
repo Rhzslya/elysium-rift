@@ -71,6 +71,8 @@ const BattleLogsChat = ({
     setIsSelectingEnemy(false);
   };
 
+  console.log(countdown);
+
   return (
     <section className="relative flex flex-col justify-center items-center text-sm px-4">
       <div className="battle-logs-chat w-full max-w-3xl space-y-2">
@@ -100,7 +102,7 @@ const BattleLogsChat = ({
         ))}
       </div>
 
-      {!hasChosenRole && gameStarted && availableRoles?.length > 0 && (
+      {gameStarted && availableRoles?.length > 0 && (
         <div className="selection-roles mt-6 w-full max-w-4xl">
           <h1 className="text-xl font-semibold text-center text-amber-400">
             Select Your Role

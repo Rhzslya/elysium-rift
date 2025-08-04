@@ -19,7 +19,7 @@ export type Player = {
   userId: string | null;
   username: string | null;
   isReady: boolean | false;
-  roles: Role | null;
+  role: Role | null;
 };
 
 // export type Enemies = {

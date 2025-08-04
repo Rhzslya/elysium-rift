@@ -10,6 +10,7 @@ import { getPlayersFromRoom } from "./utils/GetPlayersFromRoom/index.js";
 import { removePlayerFromRoom } from "./utils/RemovePlayerFromRoom/index.js";
 import { updatePlayersList } from "./utils/UpdatePlayerList/index.js";
 import { allPlayersReady } from "./utils/AllPlayersReady/index.js";
+import { roles } from "./utils/Roles/index.js";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
@@ -107,7 +108,7 @@ app.prepare().then(() => {
 
     socket.on("player-ready", ({ roomId, username, isReady }) => {
       const room = io.sockets.adapter.rooms.get(roomId);
-      if (!room || room.size < 2) {
+      if (!room || room.size < 1) {
         socket.emit("temp-message", {
           message: "Minimum 2 players required in the room.",
         });
@@ -154,12 +155,23 @@ app.prepare().then(() => {
 
             roomStates[roomId].gameStarted = true;
 
-            io.to(roomId).emit("start-game");
-            console.log(`Game started in room ${roomId}`);
+            io.to(roomId).emit("game-started", true);
+
+            console.log(
+              `Game started in room ${roomId}, Game Started ${roomStates[roomId].gameStarted}`
+            );
           }
         }, 1000);
 
         roomStates[roomId].countdownTimer = timer;
+      }
+    });
+
+    socket.on("select-role", ({ roomId, roleId }) => {
+      const role = roles.find((r) => r.id === roleId);
+      if (!role) {
+        socket.emit("temp-message", { message: "Invalid role selected." });
+        return;
       }
     });
 

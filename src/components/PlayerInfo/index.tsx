@@ -39,9 +39,9 @@ const PlayerInfo = ({
       <div className="px-4 py-2 space-y-4">
         {currentPlayer ? (
           <div className="text-sm text-gray-300 pb-2">
-            {currentPlayer.roles ? (
+            {currentPlayer.role ? (
               (() => {
-                const role = currentPlayer.roles;
+                const role = currentPlayer.role;
 
                 const current = role.stats.currentHealth;
                 const max = role.stats.maxHealth;

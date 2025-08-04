@@ -11,7 +11,7 @@ export const getPlayersFromRoom = (io: Server, roomId: string): Player[] => {
       userId: playerSocket?.data.userId,
       username: playerSocket?.data.username,
       isReady: playerSocket?.data.isReady || false,
-      roles: playerSocket?.data.roles || null,
+      role: playerSocket?.data.role || null,
     };
   });
 };

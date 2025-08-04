@@ -19,8 +19,7 @@ export const updatePlayersList = (
         userId: player.data.userId,
         username: player.data.username,
         isReady: player.data.isReady || false,
-        roles: player.data.roles || null,
-        roleSelected: player.data.roleSelected || false,
+        role: player.data.role || null,
       };
     })
     .filter((player): player is NonNullable<typeof player> => player !== null);
