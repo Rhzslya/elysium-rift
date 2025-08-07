@@ -11,7 +11,6 @@ interface ChatBoxProps {
 
 const ChatBox = ({ sender, message, isOwnMessage }: ChatBoxProps) => {
   const isSystemMessage = sender === "system";
-  console.log(message);
   return (
     <section className="">
       <div className={`flex text-sm`}>

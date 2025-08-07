@@ -16,7 +16,7 @@ const ChatForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full flex gap-x-2">
+    <form onSubmit={handleSubmit} className="w-full flex px-3 gap-x-2">
       <input
         type="text"
         value={message}
@@ -27,7 +27,7 @@ const ChatForm = ({
 
       <button
         type="submit"
-        className="bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded text-black font-semibold"
+        className="hidden bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded text-black font-semibold"
       >
         Send
       </button>

@@ -8,7 +8,6 @@ const BattleLogs = ({
   logs,
   handleReady,
   handleExitRoom,
-  handleSendMessage,
   players,
   setPlayers,
   userId,
@@ -67,17 +66,7 @@ const BattleLogs = ({
       </div>
 
       <div className="w-full mt-3">
-        <ChatForm onSendMessage={handleSendMessage} />
         <div className="flex items-center justify-center gap-2">
-          <div className="exit-btn mt-3 mr-auto">
-            <button
-              onClick={handleExitRoom}
-              className="cursor-pointer bg-red-400 hover:bg-red-600 px-4 py-2 rounded text-black font-semibold"
-            >
-              Exit
-            </button>
-          </div>
-
           {countdown !== 0 && (
             <div className="ready-btn mt-3 w-full">
               <button

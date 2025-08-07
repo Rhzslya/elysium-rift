@@ -10,6 +10,7 @@ import TitleRoom from "@/components/TitleRoom";
 import ChatBox from "@/components/ChatBox";
 import EnemiesList from "@/components/EnemiesList";
 import { Sword, X } from "lucide-react";
+import ChatForm from "@/components/ChatForm";
 
 export default function GameRoom() {
   const { socket, userId } = useUserSocket();
@@ -217,21 +218,25 @@ export default function GameRoom() {
         turnMessages={turnMessages}
       />
 
-      <div
-        ref={chatAreaRef}
-        className="col-start-1 row-start-4 h-[100px] flex-1 overflow-y-auto p-4 space-y-2 hide-scrollbar"
-      >
-        {messages.map((msg, index) => (
-          <ChatBox
-            key={index}
-            sender={msg.sender === playerName ? "You" : msg.sender}
-            message={msg.message}
-            isOwnMessage={msg.sender === playerName}
-          />
-        ))}
+      <div className="col-start-1 row-start-4">
+        <div
+          ref={chatAreaRef}
+          className="h-[100px] flex-1 overflow-y-auto p-4 space-y-2 hide-scrollbar"
+        >
+          {messages.map((msg, index) => (
+            <ChatBox
+              key={index}
+              sender={msg.sender === playerName ? "You" : msg.sender}
+              message={msg.message}
+              isOwnMessage={msg.sender === playerName}
+            />
+          ))}
+        </div>
+        <ChatForm onSendMessage={handleSendMessage} />
       </div>
-      <EnemiesList enemyData={enemyData} />
-      <div className="player-list col-start-3 row-start-1 flex flex-col items-end">
+
+      {/* <EnemiesList enemyData={enemyData} /> */}
+      <div className="player-list col-start-3 row-start-1">
         <div>
           <h2 className="text-lg font-semibold text-white">Player List</h2>
         </div>
@@ -249,53 +254,64 @@ export default function GameRoom() {
         </div>
       </div>
 
-      <PlayerInfo playerName={playerName} players={players} userId={userId} />
-      <div className="relative      col-start-3 row-start-4">
-        {selectedEnemyId && (
-          <div className="button-cancel col-start-3 row-start-1 flex ml-auto mr-4">
+      {/* <PlayerInfo playerName={playerName} players={players} userId={userId} /> */}
+      <div className="col-start-3 row-start-4">
+        <div className="h-[100px]">
+          {selectedEnemyId && (
+            <div className="button-cancel h-[100px] col-start-3 row-start-1 flex ml-auto mr-4">
+              <button
+                className="cursor-pointer hover:text-red-500 duration-300"
+                onClick={cancelSelectionEnemy}
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          )}
+          <div className="button-attack row-span-2 col-start-3 row-start-2 flex justify-center items-center">
             <button
-              className="cursor-pointer hover:text-red-500 duration-300"
-              onClick={cancelSelectionEnemy}
+              onClick={handleSingleAttackEnemy}
+              className={`${
+                selectedEnemyId ? "bg-red-500" : "bg-red-400"
+              } relative hover:bg-red-600 cursor-pointer text-white font-semibold p-3 rounded-full flex items-center justify-center shadow-lg ml-8`}
             >
-              <X className="w-6 h-6" />
+              <Sword className="w-6 h-6" />
             </button>
           </div>
-        )}
-        <div className="button-attack row-span-2 col-start-3 row-start-2 flex justify-center items-center">
-          <button
-            onClick={handleSingleAttackEnemy}
-            className={`${
-              selectedEnemyId ? "bg-red-500" : "bg-red-400"
-            } relative hover:bg-red-600 cursor-pointer text-white font-semibold p-3 rounded-full flex items-center justify-center shadow-lg ml-8`}
-          >
-            <Sword className="w-6 h-6" />
-          </button>
+
+          {isSelectingEnemy && (
+            <div className="col-span-2 col-start-1 row-start-3 flex justify-center ml-auto">
+              <div className="flex ">
+                {enemyData
+                  .filter((e) => e.isAlive)
+                  .map((enemy) => (
+                    <button
+                      key={enemy.id}
+                      onClick={() => {
+                        setSelectedEnemyId(enemy.id);
+                        setIsSelectingEnemy(false);
+                      }}
+                      className={`text-left cursor-pointer text-white text-sm py-1 px-2 rounded-sm transition-all duration-200 font-medium ${
+                        selectedEnemyId === enemy.id
+                          ? "bg-emerald-500 text-white ring-2 ring-emerald-300"
+                          : "hover:bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {enemy.name}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {isSelectingEnemy && (
-          <div className="col-span-2 col-start-1 row-start-3 flex justify-center ml-auto">
-            <div className="flex ">
-              {enemyData
-                .filter((e) => e.isAlive)
-                .map((enemy) => (
-                  <button
-                    key={enemy.id}
-                    onClick={() => {
-                      setSelectedEnemyId(enemy.id);
-                      setIsSelectingEnemy(false);
-                    }}
-                    className={`text-left cursor-pointer text-white text-sm py-1 px-2 rounded-sm transition-all duration-200 font-medium ${
-                      selectedEnemyId === enemy.id
-                        ? "bg-emerald-500 text-white ring-2 ring-emerald-300"
-                        : "hover:bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {enemy.name}
-                  </button>
-                ))}
-            </div>
-          </div>
-        )}
+        <div className="exit-btn mr-auto">
+          <button
+            onClick={handleExitRoom}
+            className="cursor-pointer bg-red-400 hover:bg-red-600 px-4 py-2 rounded text-black font-semibold"
+          >
+            Exit
+          </button>
+        </div>
       </div>
     </main>
   );
