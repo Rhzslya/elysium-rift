@@ -11,6 +11,7 @@ import ChatBox from "@/components/ChatBox";
 import EnemiesList from "@/components/EnemiesList";
 import { Sword, X } from "lucide-react";
 import ChatForm from "@/components/ChatForm";
+import PlayerRoomCard from "@/components/PlayerRoomCard";
 
 export default function GameRoom() {
   const { socket, userId } = useUserSocket();
@@ -199,7 +200,7 @@ export default function GameRoom() {
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-3 grid-rows-[0.5fr_1fr_1fr_auto] gap-2">
       <TitleRoom roomId={Array.isArray(roomId) ? roomId[0] : roomId} />
-      <BattleLogs
+      {/* <BattleLogs
         countdown={countdown}
         logs={logs}
         handleReady={handleReady}
@@ -216,12 +217,14 @@ export default function GameRoom() {
         stage={stage}
         enemyData={enemyData}
         turnMessages={turnMessages}
-      />
+      /> */}
+      <PlayerRoomCard players={players} />
+      <div className="col-start-2 row-start-4">3</div>
 
       <div className="col-start-1 row-start-4">
         <div
           ref={chatAreaRef}
-          className="h-[100px] flex-1 overflow-y-auto p-4 space-y-2 hide-scrollbar"
+          className="h-[100px] flex-1 overflow-y-auto py-4 space-y-2 hide-scrollbar"
         >
           {messages.map((msg, index) => (
             <ChatBox
@@ -236,7 +239,7 @@ export default function GameRoom() {
       </div>
 
       {/* <EnemiesList enemyData={enemyData} /> */}
-      <div className="player-list col-start-3 row-start-1">
+      {/* <div className="player-list col-start-3 row-start-1">
         <div>
           <h2 className="text-lg font-semibold text-white">Player List</h2>
         </div>
@@ -252,7 +255,7 @@ export default function GameRoom() {
             </span>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* <PlayerInfo playerName={playerName} players={players} userId={userId} /> */}
       <div className="col-start-3 row-start-4">

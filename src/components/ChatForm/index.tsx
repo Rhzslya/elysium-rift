@@ -16,7 +16,7 @@ const ChatForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full flex px-3 gap-x-2">
+    <form onSubmit={handleSubmit} className="w-full flex gap-x-2">
       <input
         type="text"
         value={message}
