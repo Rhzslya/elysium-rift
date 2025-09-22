@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Modal from "../components/Modal";
 import ModalJoinRoom from "@/components/ModalJoinRoom";
 import { useUserSocket } from "@/utils/Contexts";
+import { setGameAccess } from "@/utils/setGameAccess";
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
@@ -20,6 +21,9 @@ export default function Home() {
     if (!playerName.trim() || !userId || !socket) return;
 
     const roomId = nanoid(6);
+
+    setGameAccess(roomId);
+
     router.push(`/game/${roomId}?name=${encodeURIComponent(playerName)}`);
   };
 
@@ -40,6 +44,8 @@ export default function Home() {
       roomCode,
       (exists: boolean, gameStarted: boolean) => {
         if (exists) {
+          setGameAccess(roomCode);
+
           router.push(
             `/game/${roomCode}?name=${encodeURIComponent(playerName)}`
           );
