@@ -42,7 +42,7 @@ export default function Home() {
     socket?.emit(
       "check-room",
       roomCode,
-      (exists: boolean, gameStarted: boolean) => {
+      (exists: boolean, gameStarted: boolean, isFull: boolean) => {
         if (exists) {
           setGameAccess(roomCode);
 
@@ -51,6 +51,8 @@ export default function Home() {
           );
         } else if (gameStarted) {
           setMessage("Game already started!");
+        } else if (isFull) {
+          setMessage("Room is full!");
         } else {
           setMessage("Room not found!");
         }

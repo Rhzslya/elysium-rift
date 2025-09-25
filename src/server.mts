@@ -30,6 +30,8 @@ app.prepare().then(() => {
   io.on("connection", (socket) => {
     console.log("User connected", socket.id);
 
+    const MAX_PLAYERS = 4;
+
     socket.on("check-room", (roomId, callback) => {
       const gameStarted = roomStates[roomId]?.gameStarted ?? false;
 
@@ -40,12 +42,21 @@ app.prepare().then(() => {
       }
 
       const room = io.sockets.adapter.rooms.get(roomId);
+
       if (room) {
-        console.log(`Room ${roomId} exists.`);
-        callback(true, false);
+        const numPlayers = room.size;
+        console.log(`Room ${roomId} exists with ${numPlayers} players.`);
+
+        if (numPlayers >= MAX_PLAYERS) {
+          console.log(`Room ${roomId} is full.`);
+          callback(false, false, true);
+          return;
+        }
+
+        callback(true, false, false);
       } else {
         console.log(`Room ${roomId} not found.`);
-        callback(false, false);
+        callback(false, false, false);
       }
     });
 
