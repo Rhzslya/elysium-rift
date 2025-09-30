@@ -28,6 +28,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "**/*.d.ts",
     ".next/types/**/*.ts",
     "src/server.mts",
     "src/utils/Roles/index.js"

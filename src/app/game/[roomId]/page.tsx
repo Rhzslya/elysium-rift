@@ -195,8 +195,6 @@ export default function GameRoom() {
     });
   };
 
-  console.log(gameStarted);
-
   return (
     <main className="min-h-screen text-white p-6 grid grid-cols-3 grid-rows-[0.5fr_1fr_1fr_auto] gap-2">
       <TitleRoom roomId={Array.isArray(roomId) ? roomId[0] : roomId} />
@@ -219,7 +217,16 @@ export default function GameRoom() {
         turnMessages={turnMessages}
       /> */}
       <PlayerRoomCard players={players} />
-      <div className="col-start-2 row-start-4">3</div>
+      <div className="col-start-2 row-start-4">
+        <div className="ready-btn flex h-full">
+          <button
+            onClick={handleReady}
+            className="cursor-pointer w-full bg-green-400 mb-auto mx-auto hover:bg-green-600 px-6 py-2 rounded text-black font-semibold"
+          >
+            Ready
+          </button>
+        </div>
+      </div>
 
       <div className="col-start-1 row-start-4">
         <div
