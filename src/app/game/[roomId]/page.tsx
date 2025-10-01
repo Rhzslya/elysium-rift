@@ -44,6 +44,8 @@ export default function GameRoom() {
     null
   );
   const [isSelectingEnemy, setIsSelectingEnemy] = React.useState(false);
+  const currentPlayer = players.find((p) => p.userId === userId);
+  const isReady = currentPlayer?.isReady ?? false;
 
   const handleSingleAttackEnemy = () => {
     if (!selectedEnemyId) {
@@ -218,13 +220,23 @@ export default function GameRoom() {
       /> */}
       <PlayerRoomCard players={players} />
       <div className="col-start-2 row-start-4">
-        <div className="ready-btn flex h-full">
-          <button
-            onClick={handleReady}
-            className="cursor-pointer w-full bg-green-400 mb-auto mx-auto hover:bg-green-600 px-6 py-2 rounded text-black font-semibold"
-          >
-            Ready
-          </button>
+        <div className="flex items-center justify-center gap-2">
+          {countdown !== 0 && (
+            <div className="ready-btn mt-3 w-full">
+              <button
+                onClick={handleReady}
+                className={`w-full cursor-pointer px-4 py-2 rounded text-black font-semibold transition-colors duration-200
+        ${
+          isReady
+            ? "bg-yellow-300 hover:bg-yellow-500"
+            : "bg-green-400 hover:bg-green-600"
+        }`}
+                aria-pressed={isReady}
+              >
+                {isReady ? "Cancel Ready" : "I'm Ready"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
