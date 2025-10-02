@@ -12,6 +12,7 @@ import EnemiesList from "@/components/EnemiesList";
 import { Sword, X } from "lucide-react";
 import ChatForm from "@/components/ChatForm";
 import PlayerRoomCard from "@/components/PlayerRoomCard";
+import CountdownBox from "@/components/CountdownBox";
 
 export default function GameRoom() {
   const { socket, userId } = useUserSocket();
@@ -197,9 +198,17 @@ export default function GameRoom() {
     });
   };
 
+  const handleCopyRoomId = () => {
+    if (typeof roomId === "string") {
+      navigator.clipboard.writeText(roomId);
+    }
+  };
+
   return (
-    <main className="min-h-screen text-white p-6 grid grid-cols-3 grid-rows-[0.5fr_1fr_1fr_auto] gap-2">
-      <TitleRoom roomId={Array.isArray(roomId) ? roomId[0] : roomId} />
+    <main className="min-h-screen relative text-white p-6 grid grid-cols-3 grid-rows-[0.5fr_1fr_1fr_auto] gap-2">
+      <CountdownBox countdown={countdown} />
+
+      <TitleRoom />
       {/* <BattleLogs
         countdown={countdown}
         logs={logs}
@@ -219,24 +228,42 @@ export default function GameRoom() {
         turnMessages={turnMessages}
       /> */}
       <PlayerRoomCard players={players} />
-      <div className="col-start-2 row-start-4">
-        <div className="flex items-center justify-center gap-2">
+      <div className="col-start-2 row-start-4 btn-box flex justify-center items-center gap-4 text-base">
+        <div className="room-code-btn w-full">
+          <button
+            className="cursor-pointer w-full bg-neutral-400 hover:bg-neutral-600 px-6 py-2  text-white font-semibold"
+            onClick={handleCopyRoomId}
+          >
+            ROOM CODE
+          </button>
+        </div>
+        <div className="ready-btn relative w-full flex justify-center items-center">
+          {/* border absolute */}
+          <div className="absolute inset-0 -top-1 -left-1 -right-1 -bottom-1 border-neutral-100 border-1 "></div>
+
           {countdown !== 0 && (
-            <div className="ready-btn mt-3 w-full">
-              <button
-                onClick={handleReady}
-                className={`w-full cursor-pointer px-4 py-2 rounded text-black font-semibold transition-colors duration-200
+            <button
+              onClick={handleReady}
+              className={`relative w-full cursor-pointer px-8 py-4 z-10 border-2 border-transparent  text-white font-semibold transition-colors duration-300
         ${
           isReady
-            ? "bg-yellow-300 hover:bg-yellow-500"
-            : "bg-green-400 hover:bg-green-600"
+            ? "bg-neutral-300 hover:bg-neutral-500"
+            : "bg-neutral-500 hover:bg-neutral-300"
         }`}
-                aria-pressed={isReady}
-              >
-                {isReady ? "Cancel Ready" : "I'm Ready"}
-              </button>
-            </div>
+              aria-pressed={isReady}
+            >
+              {isReady ? "Cancel Ready" : "READY"}
+            </button>
           )}
+        </div>
+
+        <div className="exit-btn w-full">
+          <button
+            onClick={handleExitRoom}
+            className="cursor-pointer w-[50%] bg-neutral-400 hover:bg-neutral-600 px-2 py-2  text-white font-semibold"
+          >
+            EXIT
+          </button>
         </div>
       </div>
 
@@ -277,16 +304,7 @@ export default function GameRoom() {
       </div> */}
 
       {/* <PlayerInfo playerName={playerName} players={players} userId={userId} /> */}
-      <div className="col-start-3 row-start-4">
-        <div className="exit-btn flex h-full">
-          <button
-            onClick={handleExitRoom}
-            className="cursor-pointer ml-auto mt-auto bg-red-400 hover:bg-red-600 px-6 py-2 rounded text-black font-semibold"
-          >
-            Exit
-          </button>
-        </div>
-      </div>
+      <div className="col-start-3 row-start-4"></div>
     </main>
   );
 }

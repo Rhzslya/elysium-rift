@@ -3,7 +3,7 @@ import React from "react";
 
 const PlayerRoomCard = ({ players }: { players: Player[] }) => {
   return (
-    <div className="col-span-3 row-span-2 row-start-2 bg-gray-800 rounded-md p-4 shadow-md">
+    <div className="col-span-3 row-span-2 row-start-2 bg-neutral-900 rounded-md p-4 shadow-md">
       <div className="box-card rounded-lg p-4 h-full flex flex-col">
         <div className="player-card flex-1 overflow-x-auto">
           {players.length === 0 ? (
