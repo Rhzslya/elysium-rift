@@ -9,7 +9,7 @@ import { ResolvedEnemy, Player, Role } from "@/utils/Type";
 import TitleRoom from "@/components/TitleRoom";
 import ChatBox from "@/components/ChatBox";
 import EnemiesList from "@/components/EnemiesList";
-import { Sword, X } from "lucide-react";
+import { Clipboard, DoorOpen } from "lucide-react";
 import ChatForm from "@/components/ChatForm";
 import PlayerRoomCard from "@/components/PlayerRoomCard";
 import CountdownBox from "@/components/CountdownBox";
@@ -47,6 +47,7 @@ export default function GameRoom() {
   const [isSelectingEnemy, setIsSelectingEnemy] = React.useState(false);
   const currentPlayer = players.find((p) => p.userId === userId);
   const isReady = currentPlayer?.isReady ?? false;
+  const [copied, setCopied] = useState(false);
 
   const handleSingleAttackEnemy = () => {
     if (!selectedEnemyId) {
@@ -198,9 +199,17 @@ export default function GameRoom() {
     });
   };
 
-  const handleCopyRoomId = () => {
-    if (typeof roomId === "string") {
-      navigator.clipboard.writeText(roomId);
+  const handleCopyRoomId = async () => {
+    try {
+      if (!roomId) return; // pastikan ada
+
+      const textToCopy = Array.isArray(roomId) ? roomId[0] : roomId;
+      await navigator.clipboard.writeText(textToCopy);
+
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1000);
+    } catch (err) {
+      console.error("Failed to copy!", err);
     }
   };
 
@@ -229,16 +238,21 @@ export default function GameRoom() {
       /> */}
       <PlayerRoomCard players={players} />
       <div className="col-start-2 row-start-4 btn-box flex justify-center items-center gap-4 text-base">
-        <div className="room-code-btn w-full">
+        <div className="room-code-btn relative w-full">
+          {copied && (
+            <div className="absolute w-full h-full -top-full flex justify-center items-center text-white font-medium text-xs transition-opacity">
+              <span>Code Copied</span>
+            </div>
+          )}
           <button
-            className="cursor-pointer w-full bg-neutral-400 hover:bg-neutral-600 px-6 py-2  text-white font-semibold"
+            className="cursor-pointer w-full bg-neutral-500 hover:bg-neutral-600 px-6 py-2  text-white font-semibold"
             onClick={handleCopyRoomId}
           >
+            <Clipboard className="inline mb-1 mr-2 font-bold" size={18} />
             ROOM CODE
           </button>
         </div>
         <div className="ready-btn relative w-full flex justify-center items-center">
-          {/* border absolute */}
           <div className="absolute inset-0 -top-1 -left-1 -right-1 -bottom-1 border-neutral-100 border-1 "></div>
 
           {countdown !== 0 && (
@@ -248,11 +262,11 @@ export default function GameRoom() {
         ${
           isReady
             ? "bg-neutral-300 hover:bg-neutral-500"
-            : "bg-neutral-500 hover:bg-neutral-300"
+            : "bg-neutral-400 hover:bg-neutral-300"
         }`}
               aria-pressed={isReady}
             >
-              {isReady ? "Cancel Ready" : "READY"}
+              {isReady ? "CANCEL" : "READY"}
             </button>
           )}
         </div>
@@ -260,9 +274,10 @@ export default function GameRoom() {
         <div className="exit-btn w-full">
           <button
             onClick={handleExitRoom}
-            className="cursor-pointer w-[50%] bg-neutral-400 hover:bg-neutral-600 px-2 py-2  text-white font-semibold"
+            className="cursor-pointer w-full bg-neutral-500 hover:bg-neutral-600 px-2 py-2  text-white font-semibold"
           >
-            EXIT
+            LEAVE ROOM
+            <DoorOpen className="inline mb-1 ml-2 font-bold" size={18} />
           </button>
         </div>
       </div>
