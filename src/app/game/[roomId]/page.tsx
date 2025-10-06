@@ -13,6 +13,7 @@ import { Clipboard, DoorOpen } from "lucide-react";
 import ChatForm from "@/components/ChatForm";
 import PlayerRoomCard from "@/components/PlayerRoomCard";
 import CountdownBox from "@/components/CountdownBox";
+import RoomControls from "@/components/RoomControls";
 
 export default function GameRoom() {
   const { socket, userId } = useUserSocket();
@@ -237,50 +238,14 @@ export default function GameRoom() {
         turnMessages={turnMessages}
       /> */}
       <PlayerRoomCard players={players} />
-      <div className="col-start-2 row-start-4 btn-box flex justify-center items-center gap-4 text-base">
-        <div className="room-code-btn relative w-full">
-          {copied && (
-            <div className="absolute w-full h-full -top-full flex justify-center items-center text-white font-medium text-xs transition-opacity">
-              <span>Code Copied</span>
-            </div>
-          )}
-          <button
-            className="cursor-pointer w-full bg-neutral-500 hover:bg-neutral-600 px-6 py-2  text-white font-semibold"
-            onClick={handleCopyRoomId}
-          >
-            <Clipboard className="inline mb-1 mr-2 font-bold" size={18} />
-            ROOM CODE
-          </button>
-        </div>
-        <div className="ready-btn relative w-full flex justify-center items-center">
-          <div className="absolute inset-0 -top-1 -left-1 -right-1 -bottom-1 border-neutral-100 border-1 "></div>
-
-          {countdown !== 0 && (
-            <button
-              onClick={handleReady}
-              className={`relative w-full cursor-pointer px-8 py-4 z-10 border-2 border-transparent  text-white font-semibold transition-colors duration-300
-        ${
-          isReady
-            ? "bg-neutral-300 hover:bg-neutral-500"
-            : "bg-neutral-400 hover:bg-neutral-300"
-        }`}
-              aria-pressed={isReady}
-            >
-              {isReady ? "CANCEL" : "READY"}
-            </button>
-          )}
-        </div>
-
-        <div className="exit-btn w-full">
-          <button
-            onClick={handleExitRoom}
-            className="cursor-pointer w-full bg-neutral-500 hover:bg-neutral-600 px-2 py-2  text-white font-semibold"
-          >
-            LEAVE ROOM
-            <DoorOpen className="inline mb-1 ml-2 font-bold" size={18} />
-          </button>
-        </div>
-      </div>
+      <RoomControls
+        copied={copied}
+        handleCopyRoomId={handleCopyRoomId}
+        countdown={countdown}
+        handleReady={handleReady}
+        isReady={isReady}
+        handleExitRoom={handleExitRoom}
+      />
 
       <div className="col-start-1 row-start-4">
         <div
