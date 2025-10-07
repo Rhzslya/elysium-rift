@@ -3,9 +3,9 @@ import React from "react";
 
 const PlayerRoomCard = ({ players }: { players: Player[] }) => {
   return (
-    <div className="relative col-span-3 row-span-2 row-start-2 flex flex-wrap justify-center gap-6 p-6 bg-gradient-to-r from-gray-200 to-gray-100 rounded-2xl shadow-inner border-4 border-white">
+    <div className="relative col-span-3 row-span-2 w-[80%] mx-auto row-start-2 flex flex-wrap justify-center gap-6 p-6 bg-gradient-to-r from-gray-200 to-gray-100 rounded-2xl shadow-inner border-4 border-white">
       <div className="box-card w-full p-4 h-full flex flex-col">
-        <ul className="grid grid-cols-2 md:grid-cols-4 gap-5 h-full">
+        <ul className="grid grid-cols-2 md:grid-cols-4 gap-12 h-full">
           {players.slice(0, 4).map((player, index) => (
             <li
               key={index}
@@ -13,7 +13,7 @@ const PlayerRoomCard = ({ players }: { players: Player[] }) => {
             >
               {/* Header gradient bulat */}
               <div
-                className={`h-54 w-full bg-gradient-to-bl ${
+                className={`h-[300px] w-full bg-gradient-to-bl ${
                   [
                     "from-orange-600 to-yellow-400",
                     "from-purple-600 to-pink-500",
